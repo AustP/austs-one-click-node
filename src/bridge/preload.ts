@@ -55,17 +55,13 @@ const store = createStoreBindings('config');
 contextBridge.exposeInMainWorld('docker', docker);
 contextBridge.exposeInMainWorld('electron', electron);
 contextBridge.exposeInMainWorld('goal', goal);
-contextBridge.exposeInMainWorld('ipcRenderer', ipcRenderer);
-contextBridge.exposeInMainWorld('store', {
-  ...store,
-});
+contextBridge.exposeInMainWorld('store', store);
 
 declare global {
   interface Window {
     docker: typeof docker;
     electron: typeof electron;
     goal: typeof goal;
-    ipcRenderer: typeof ipcRenderer;
     store: typeof store;
   }
 }
