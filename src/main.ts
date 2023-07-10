@@ -1,4 +1,4 @@
-import { app, BrowserWindow, session } from 'electron';
+import { app, BrowserWindow, session, shell } from 'electron';
 import isDev from 'electron-is-dev';
 import Store from 'electron-persist-secure/lib/store';
 
@@ -80,12 +80,14 @@ app.on('activate', () => {
   }
 });
 
-// prevent all navigation and new windows
-// see https://www.electronjs.org/docs/latest/tutorial/security
+// make sure all links open in the default browser
 app.on('web-contents-created', (_, contents) => {
   contents.on('will-attach-webview', (event) => event.preventDefault());
   contents.on('will-navigate', (event) => event.preventDefault());
-  contents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  contents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
 });
 
 // In this file you can include the rest of your app's specific main process

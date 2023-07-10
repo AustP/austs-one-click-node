@@ -1,12 +1,13 @@
+import Body from '@components/app/Body';
 import Header from '@components/app/Header';
 
 import './index.css';
 
 const App = () => {
   return (
-    <div className="bg-slate-100 flex h-full dark:bg-slate-900 dark:text-white">
+    <div className="bg-slate-100 dark:bg-slate-900 flex flex-col h-full text-slate-900 dark:text-slate-100">
       <Header />
-      <div>Body</div>
+      <Body />
     </div>
   );
 };
