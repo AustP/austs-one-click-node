@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, session } from 'electron';
 import isDev from 'electron-is-dev';
 import Store from 'electron-persist-secure/lib/store';
 
@@ -33,9 +33,26 @@ const createWindow = (): void => {
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-  // if (isDev) {
-  mainWindow.webContents.openDevTools({ mode: 'detach' });
-  // }
+  if (isDev) {
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
+  }
+
+  // remove the menu
+  mainWindow.removeMenu();
+
+  // setup CSP
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          `default-src 'self' 'unsafe-inline' data: ${
+            isDev ? "'unsafe-eval'" : ''
+          }; font-src https://fonts.gstatic.com`,
+        ],
+      },
+    });
+  });
 };
 
 // This method will be called when Electron has finished
@@ -61,6 +78,14 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+
+// prevent all navigation and new windows
+// see https://www.electronjs.org/docs/latest/tutorial/security
+app.on('web-contents-created', (_, contents) => {
+  contents.on('will-attach-webview', (event) => event.preventDefault());
+  contents.on('will-navigate', (event) => event.preventDefault());
+  contents.setWindowOpenHandler(() => ({ action: 'deny' }));
 });
 
 // In this file you can include the rest of your app's specific main process

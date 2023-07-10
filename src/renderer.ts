@@ -29,6 +29,5 @@
 import ReactDOM from 'react-dom';
 
 import App from './render/App';
-import './render/index.css';
 
 ReactDOM.render(App(), document.getElementById('root'));
