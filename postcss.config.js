@@ -6,10 +6,10 @@ module.exports = {
       protocol: 'https:',
       variants: {
         Montserrat: {
-          100: [],
           200: [],
-          '200 italic': [],
           300: [],
+          400: [],
+          '400 italic': [],
         },
       },
     }),
