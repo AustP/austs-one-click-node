@@ -1,3 +1,5 @@
+import { Status } from '@/render/flux/wizardStore';
+
 export default function StatusIndicator({
   active = false,
   children = null,
@@ -9,7 +11,7 @@ export default function StatusIndicator({
   children?: React.ReactNode;
   className?: string;
   label: React.ReactNode;
-  status: 'failed' | 'pending' | 'success';
+  status: Status;
 }) {
   return (
     <div className={className}>
@@ -18,9 +20,9 @@ export default function StatusIndicator({
           {active && (
             <div
               className={`absolute animate-ping [animation-duration:3000ms] ${
-                status === 'success'
+                status === Status.Success
                   ? 'bg-green-500'
-                  : status === 'pending'
+                  : status === Status.Pending
                   ? 'bg-yellow-500'
                   : 'bg-red-500'
               } h-2 mx-2 rounded-full w-2`}
@@ -28,9 +30,9 @@ export default function StatusIndicator({
           )}
           <div
             className={`${
-              status === 'success'
+              status === Status.Success
                 ? 'bg-green-500'
-                : status === 'pending'
+                : status === Status.Pending
                 ? 'bg-yellow-500'
                 : 'bg-red-500'
             } h-2 mx-2 rounded-full w-2`}
@@ -38,7 +40,7 @@ export default function StatusIndicator({
         </div>
         <div
           className={`${
-            status === 'success'
+            status === Status.Success
               ? 'text-slate-500'
               : !active
               ? 'text-slate-700 dark:text-slate-300'
@@ -48,7 +50,7 @@ export default function StatusIndicator({
           {label}
         </div>
       </div>
-      {status !== 'success' && children && (
+      {status !== Status.Success && children && (
         <div className="bg-slate-300 dark:bg-slate-700 mt-2 p-2 rounded-md text-xs">
           {children}
         </div>
