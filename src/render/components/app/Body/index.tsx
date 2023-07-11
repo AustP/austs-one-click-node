@@ -7,7 +7,8 @@ import StepViewer from './StepViewer';
 import { Step } from '@/render/flux/wizardStore';
 
 export default function Body() {
-  const error = flux.wizard.useState('error');
+  const buffers = flux.wizard.useState('buffers');
+  const error = flux.wizard.selectState('error');
   const step = flux.wizard.selectState('currentStep');
   const stepStatus = flux.wizard.selectState('stepStatus');
 
@@ -24,10 +25,16 @@ export default function Body() {
           status={stepStatus[Step.Docker_Installed]}
         />
         <StatusIndicator
-          active={step === Step.Container_Built}
+          active={
+            step === Step.Container_Built || step === Step.Container_Building
+          }
           className="mt-2"
           label="Container Built"
-          status={stepStatus[Step.Container_Built]}
+          status={
+            step === Step.Container_Built
+              ? stepStatus[Step.Container_Built]
+              : stepStatus[Step.Container_Building]
+          }
         />
         <StatusIndicator
           active={step === Step.Container_Running}
@@ -55,6 +62,7 @@ export default function Body() {
         />
       </Column>
       <StepViewer
+        buffers={buffers}
         className="grow"
         error={error}
         status={stepStatus[step]}
