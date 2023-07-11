@@ -1,7 +1,12 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
+import isDev from 'electron-is-dev';
 
 import './docker';
 import './goal';
+
+ipcMain.on('isDev', () =>
+  BrowserWindow.getFocusedWindow()?.webContents.send('isDev', null, isDev),
+);
 
 ipcMain.on('maximize', () => BrowserWindow.getFocusedWindow()?.maximize());
 

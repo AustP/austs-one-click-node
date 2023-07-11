@@ -54,6 +54,7 @@ const store = createStoreBindings('config');
 
 contextBridge.exposeInMainWorld('docker', docker);
 contextBridge.exposeInMainWorld('electron', electron);
+contextBridge.exposeInMainWorld('isDev', () => sendIPC('isDev'));
 contextBridge.exposeInMainWorld('goal', goal);
 contextBridge.exposeInMainWorld('store', store);
 
@@ -61,6 +62,7 @@ declare global {
   interface Window {
     docker: typeof docker;
     electron: typeof electron;
+    isDev: () => Promise<boolean>;
     goal: typeof goal;
     store: typeof store;
   }

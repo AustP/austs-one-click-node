@@ -1,55 +1,65 @@
-import Button from '@components/shared/Button';
-import Link from '@components/shared/Link';
+import flux from '@aust/react-flux';
+import { useEffect } from 'react';
 
 import Column from './Column';
 import StatusIndicator from './StatusIndicator';
+import StepViewer from './StepViewer';
+import { Step } from '@/render/flux/wizardStore';
 
 export default function Body() {
+  const error = flux.wizard.useState('error');
+  const step = flux.wizard.selectState('currentStep');
+  const stepStatus = flux.wizard.selectState('stepStatus');
+
+  // when the component first loads, start going through the steps
+  useEffect(() => void flux.dispatch('wizard/checkDocker'), []);
+
   return (
     <div className="flex gap-6 grow p-6">
       <Column className="w-1/3">
         <div className="font-light mb-6 text-xl">Node Overview</div>
-        <StatusIndicator active label="Docker Installed" status="failed" />
         <StatusIndicator
+          active={step === Step.Docker_Installed}
+          label="Docker Installed"
+          status={stepStatus[Step.Docker_Installed]}
+        />
+        <StatusIndicator
+          active={step === Step.Container_Built}
           className="mt-2"
           label="Container Built"
-          status="failed"
+          status={stepStatus[Step.Container_Built]}
         />
         <StatusIndicator
-          active
+          active={step === Step.Container_Running}
           className="mt-2"
           label="Container Running"
-          status="failed"
+          status={stepStatus[Step.Container_Running]}
         />
         <StatusIndicator
+          active={step === Step.Node_Running}
           className="mt-2"
           label="Node Running"
-          status="failed"
+          status={stepStatus[Step.Node_Running]}
         />
         <StatusIndicator
+          active={step === Step.Node_Synced}
           className="mt-2"
-          label="Node Caught Up"
-          status="failed"
+          label="Node Synced"
+          status={stepStatus[Step.Node_Synced]}
         />
         <StatusIndicator
+          active={step === Step.Participating}
           className="mt-2"
           label="Participating in Consensus"
-          status="failed"
+          status={stepStatus[Step.Participating]}
         />
       </Column>
-      <div className="grow pt-4 text-slate-700 dark:text-slate-300 text-sm">
-        <div>
-          It seems that docker has not been installed on your system. Please
-          download and install docker before continuing. View the{' '}
-          <Link href="https://docs.docker.com/get-docker/">
-            official docker documentation
-          </Link>{' '}
-          for more information.
-        </div>
-        <Button className="mt-4" onClick={() => {}}>
-          Check Again
-        </Button>
-      </div>
+      <StepViewer
+        className="grow"
+        error={error}
+        status={stepStatus[step]}
+        step={step}
+      />
     </div>
   );
 }
