@@ -23,17 +23,34 @@ ipcMain.on('docker.build', () => {
     cwd: __dirname,
   });
 
-  let buffer = '';
-  child.stdout.on('data', (data) => (buffer += data.toString()));
+  child.stderr.on('data', (data: Uint8Array) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send(
+      'docker.build.stderr',
+      String.fromCharCode.apply(null, data),
+    ),
+  );
+  child.stdout.on('data', (data: Uint8Array) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send(
+      'docker.build.stdout',
+      null,
+      String.fromCharCode.apply(null, data),
+    ),
+  );
 
-  let error = '';
-  child.stderr.on('data', (data) => (error += data.toString()));
-
-  child.on('close', (code) =>
-    BrowserWindow.getFocusedWindow()?.webContents.send(
+  child.on('exit', (code) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send(
       'docker.build',
-      code ? error : null,
-      buffer,
+      code ? true : null,
+    ),
+  );
+});
+
+ipcMain.on('docker.built', () => {
+  exec(`docker images -q ${DOCKER_TAG}`, (err, stdout) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send(
+      'docker.built',
+      err,
+      stdout,
     ),
   );
 });
@@ -44,7 +61,7 @@ ipcMain.on('docker.run', (_, { port }) => {
     `docker ps -q -f name=${DOCKER_NAME} -f status=running`,
     (err, stdout) => {
       if (stdout) {
-        return BrowserWindow.getFocusedWindow()?.webContents.send(
+        return BrowserWindow.getAllWindows()[0]?.webContents.send(
           'docker.run',
           err,
           stdout,
@@ -54,7 +71,7 @@ ipcMain.on('docker.run', (_, { port }) => {
       // not running, try to restart it
       exec(`docker start ${DOCKER_NAME}`, (err, stdout) => {
         if (!err) {
-          return BrowserWindow.getFocusedWindow()?.webContents.send(
+          return BrowserWindow.getAllWindows()[0]?.webContents.send(
             'docker.run',
             err,
             stdout,
@@ -65,7 +82,7 @@ ipcMain.on('docker.run', (_, { port }) => {
         exec(
           `docker run -d -p ${port}:8080 -v "${dataPath}:/algod/data" --name ${DOCKER_NAME} ${DOCKER_TAG}`,
           (err, stdout) => {
-            BrowserWindow.getFocusedWindow()?.webContents.send(
+            BrowserWindow.getAllWindows()[0]?.webContents.send(
               'docker.run',
               err,
               stdout,
@@ -79,7 +96,7 @@ ipcMain.on('docker.run', (_, { port }) => {
 
 ipcMain.on('docker.stop', () => {
   exec(`docker stop ${DOCKER_NAME}`, (err, stdout) =>
-    BrowserWindow.getFocusedWindow()?.webContents.send(
+    BrowserWindow.getAllWindows()[0]?.webContents.send(
       'docker.stop',
       err,
       stdout,
@@ -89,7 +106,7 @@ ipcMain.on('docker.stop', () => {
 
 ipcMain.on('docker.version', () => {
   exec('docker version', (err, stdout) =>
-    BrowserWindow.getFocusedWindow()?.webContents.send(
+    BrowserWindow.getAllWindows()[0]?.webContents.send(
       'docker.version',
       err,
       stdout,
