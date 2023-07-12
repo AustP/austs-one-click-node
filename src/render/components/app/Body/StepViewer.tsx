@@ -163,6 +163,47 @@ export default function StepViewer({
               </div>
             </Flush>
           );
+        // failures go directly to Node_Starting
+      }
+
+    case Step.Node_Starting:
+      switch (status) {
+        case Status.Pending:
+          return (
+            <Flush className={className}>
+              <div className="flex items-center gap-2">
+                <Spinner className="!h-6 !w-6" />
+                <div>Starting the node...</div>
+              </div>
+            </Flush>
+          );
+        case Status.Failure:
+          return (
+            <Flush className={className}>
+              <div>The node could not be started. Please try again later.</div>
+              <Button
+                className="mt-4"
+                onClick={() => flux.dispatch('wizard/startNode')}
+              >
+                Try Again
+              </Button>
+              <Error className="mt-8">{buffers.stderr}</Error>
+            </Flush>
+          );
+      }
+
+    case Step.Node_Synced:
+      switch (status) {
+        case Status.Pending:
+          return (
+            <Flush className={className}>
+              <div className="flex items-center gap-2">
+                <Spinner className="!h-6 !w-6" />
+                <div>Checking that the node is synced...</div>
+              </div>
+            </Flush>
+          );
+        // failures go directly to Node_Syncing
       }
   }
 
