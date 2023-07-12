@@ -1,5 +1,5 @@
 import flux, { Store } from '@aust/react-flux';
-import { nodeRequest } from 'algoseas-libs/build/algo';
+import { addNode, nodeRequest } from 'algoseas-libs/build/algo';
 import { produce } from 'immer';
 
 export enum Step {
@@ -26,6 +26,7 @@ type WizardStoreState = {
     stdout: string[];
   };
   currentStep: Step;
+  port: number;
   stepStatus: Record<Step, Status>;
 };
 
@@ -41,6 +42,7 @@ const store = flux.addStore('wizard', {
     stdout: [],
   },
   currentStep: Step.Docker_Installed,
+  port: 4160,
   stepStatus: Object.entries(Step).reduce((acc, [, value]) => {
     if (typeof value === 'string') {
       return acc;
@@ -55,6 +57,14 @@ const store = flux.addStore('wizard', {
     return acc;
   }, {} as Record<Step, Status>),
 }) as any as Store<WizardStoreState>;
+
+store.register('wizard/loadConfig', async () => {
+  const port = await window.store.get('port');
+  return (state) =>
+    produce(state, (draft) => {
+      draft.port = port;
+    });
+});
 
 store.register(
   'wizard/checkDocker',
@@ -196,7 +206,7 @@ store.register('wizard/startContainer/results', async () => {
   await new Promise((resolve) => setTimeout(resolve, 1500));
 
   try {
-    await window.docker.run({ port: 4160 });
+    await window.docker.run();
     return (state) =>
       produce(state, (draft) => {
         draft.stepStatus[Step.Container_Starting] = Status.Success;
@@ -274,16 +284,34 @@ store.register('wizard/startNode/results', async () => {
   }
 });
 
-store.register(
-  'wizard/checkNodeSynced',
-  () => (state) =>
+let nodeAdded = false;
+store.register('wizard/checkNodeSynced', async () => {
+  if (!nodeAdded) {
+    const token = await window.goal.token();
+    addNode(
+      `http://localhost:${store.selectState('port')}`,
+      token,
+      'X-Algo-API-Token',
+    );
+    nodeAdded = true;
+  }
+
+  return (state) =>
     produce(state, (draft) => {
       draft.buffers = { stderr: [], stdout: [] };
       draft.currentStep = Step.Node_Synced;
       draft.stepStatus[Step.Node_Synced] = Status.Pending;
       flux.dispatch('wizard/checkNodeSynced/results');
-    }),
-);
+    });
+});
+
+store.register('wizard/checkNodeSynced/results', async () => {
+  // checking is so fast that we intentionally slow it down for UX
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+
+  let response = await nodeRequest('/v2/status', { maxRetries: 0 });
+  console.log(response);
+});
 
 // TODO: delete this
 store.register(

@@ -139,7 +139,8 @@ export default function StepViewer({
           return (
             <Flush className={className}>
               <div>
-                The container could not be started. Please try again later.
+                The container could not be started. Try changing the port number
+                to something higher and try again.
               </div>
               <Button
                 className="mt-4"

@@ -11,7 +11,8 @@ export default function Body() {
   const step = flux.wizard.selectState('currentStep');
   const stepStatus = flux.wizard.selectState('stepStatus');
 
-  // when the component first loads, start going through the steps
+  // when the component first loads, load config and start going through the steps
+  useEffect(() => void flux.dispatch('wizard/loadConfig'), []);
   useEffect(() => void flux.dispatch('wizard/checkDocker'), []);
 
   return (
