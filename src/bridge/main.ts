@@ -5,17 +5,22 @@ import './docker';
 import './goal';
 
 ipcMain.on('isDev', () =>
-  BrowserWindow.getFocusedWindow()?.webContents.send('isDev', null, isDev),
+  BrowserWindow.getAllWindows()[0]?.webContents.send('isDev', null, isDev),
 );
 
-ipcMain.on('maximize', () => BrowserWindow.getFocusedWindow()?.maximize());
+ipcMain.on('maximize', () => {
+  BrowserWindow.getAllWindows()[0]?.maximize();
+  BrowserWindow.getAllWindows()[0]?.webContents.send('maximize');
+});
 
 ipcMain.on('minimize', () => {
   if (process.platform === 'darwin') {
     app.hide();
   } else {
-    BrowserWindow.getFocusedWindow()?.minimize();
+    BrowserWindow.getAllWindows()[0]?.minimize();
   }
+
+  BrowserWindow.getAllWindows()[0]?.webContents.send('minimize');
 });
 
 ipcMain.on('quit', app.quit);

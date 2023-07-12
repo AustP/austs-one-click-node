@@ -13,7 +13,6 @@ import Flush from './Flush';
 export default function StepViewer({
   buffers,
   className = '',
-  error,
   status,
   step,
 }: {
@@ -22,7 +21,6 @@ export default function StepViewer({
     stdout: string[];
   };
   className?: string;
-  error: string;
   status: Status;
   step: Step;
 }) {
@@ -55,7 +53,6 @@ export default function StepViewer({
               >
                 Check Again
               </Button>
-              <Error className="mt-8">{error}</Error>
             </Flush>
           );
       }
@@ -71,6 +68,7 @@ export default function StepViewer({
               </div>
             </Flush>
           );
+        // failures go directly to Container_Building
       }
 
     case Step.Container_Building:
@@ -78,22 +76,91 @@ export default function StepViewer({
         case Status.Pending:
           return (
             <Flush
-              className={`flex flex-col h-[calc(100vh-124px)] w-[calc(67vw-124px)] ${className}`}
+              className={`flex flex-col h-[calc(100vh-112px)] w-[calc(67vw-124px)] ${className}`}
             >
               <div className="flex items-center gap-2">
                 <Spinner className="!h-6 !w-6" />
                 <div>Building the container...</div>
               </div>
-              <Console className="mt-6">{buffers.stderr}</Console>
+              {buffers.stderr.length > 0 && (
+                <Console className="mt-8">{buffers.stderr}</Console>
+              )}
             </Flush>
           );
         case Status.Failure:
           return (
             <Flush
-              className={`flex flex-col h-[calc(100vh-124px)] w-[calc(67vw-124px)] ${className}`}
+              className={`flex flex-col h-[calc(100vh-112px)] w-[calc(67vw-124px)] ${className}`}
             >
-              <Error>The container could not be built.</Error>
-              <Console className="mt-6">{buffers.stderr}</Console>
+              <div>
+                The container could not be built. Please make sure you are
+                connected to the internet and have at least 1GB of free hard
+                drive space.
+              </div>
+              <Button
+                className="mt-4 w-fit"
+                onClick={() => flux.dispatch('wizard/buildContainer')}
+              >
+                Try Again
+              </Button>
+              {buffers.stderr.length > 0 && (
+                <Console className="mt-8">{buffers.stderr}</Console>
+              )}
+            </Flush>
+          );
+      }
+
+    case Step.Container_Running:
+      switch (status) {
+        case Status.Pending:
+          return (
+            <Flush className={className}>
+              <div className="flex items-center gap-2">
+                <Spinner className="!h-6 !w-6" />
+                <div>Checking that the container is running...</div>
+              </div>
+            </Flush>
+          );
+        // failures go directly to Container_Starting
+      }
+
+    case Step.Container_Starting:
+      switch (status) {
+        case Status.Pending:
+          return (
+            <Flush className={className}>
+              <div className="flex items-center gap-2">
+                <Spinner className="!h-6 !w-6" />
+                <div>Starting the container...</div>
+              </div>
+            </Flush>
+          );
+        case Status.Failure:
+          return (
+            <Flush className={className}>
+              <div>
+                The container could not be started. Please try again later.
+              </div>
+              <Button
+                className="mt-4"
+                onClick={() => flux.dispatch('wizard/startContainer')}
+              >
+                Try Again
+              </Button>
+              <Error className="mt-8">{buffers.stderr}</Error>
+            </Flush>
+          );
+      }
+
+    case Step.Node_Running:
+      switch (status) {
+        case Status.Pending:
+          return (
+            <Flush className={className}>
+              <div className="flex items-center gap-2">
+                <Spinner className="!h-6 !w-6" />
+                <div>Checking that the node is running...</div>
+              </div>
             </Flush>
           );
       }

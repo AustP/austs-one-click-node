@@ -60,6 +60,7 @@ const docker = {
   ) => sendIPC('docker.build', { stderr, stdout }),
   built: () => sendIPC('docker.built'),
   run: ({ port } = { port: 4160 }) => sendIPC('docker.run', { port }),
+  running: () => sendIPC('docker.running'),
   stop: () => sendIPC('docker.stop'),
   version: () => sendIPC('docker.version'),
 };

@@ -94,6 +94,16 @@ ipcMain.on('docker.run', (_, { port }) => {
   );
 });
 
+ipcMain.on('docker.running', () => {
+  exec(`docker ps -q -f name=${DOCKER_NAME} -f status=running`, (err, stdout) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send(
+      'docker.running',
+      err,
+      stdout,
+    ),
+  );
+});
+
 ipcMain.on('docker.stop', () => {
   exec(`docker stop ${DOCKER_NAME}`, (err, stdout) =>
     BrowserWindow.getAllWindows()[0]?.webContents.send(
