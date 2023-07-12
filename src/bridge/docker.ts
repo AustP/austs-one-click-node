@@ -3,6 +3,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import fs from 'fs';
 import path from 'path';
 
+import { store } from '../main';
 import { productName } from '../../package.json';
 
 export const DOCKER_NAME = 'austs-two-click-node';
@@ -11,7 +12,7 @@ const DOCKER_TAG = `${DOCKER_NAME}:latest`;
 const dataPath = path.join(
   app.getPath('appData'),
   productName,
-  'algorand',
+  'algod',
   'data',
 );
 if (!fs.existsSync(dataPath)) {
@@ -55,7 +56,41 @@ ipcMain.on('docker.built', () => {
   );
 });
 
-ipcMain.on('docker.run', (_, { port }) => {
+ipcMain.on('docker.remap', () => {
+  exec(`docker stop ${DOCKER_NAME}`, (err, stdout) => {
+    if (err) {
+      return BrowserWindow.getAllWindows()[0]?.webContents.send(
+        'docker.remap',
+        err,
+        stdout,
+      );
+    }
+
+    exec(`docker rm ${DOCKER_NAME}`, (err, stdout) => {
+      if (err) {
+        return BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'docker.remap',
+          err,
+          stdout,
+        );
+      }
+
+      exec(
+        `docker run -d -p ${store.get(
+          'port',
+        )}:8080 -v "${dataPath}:/algod/data" --name ${DOCKER_NAME} ${DOCKER_TAG}`,
+        (err, stdout) =>
+          BrowserWindow.getAllWindows()[0]?.webContents.send(
+            'docker.remap',
+            err,
+            stdout,
+          ),
+      );
+    });
+  });
+});
+
+ipcMain.on('docker.run', () => {
   // first check to see if the container is already running
   exec(
     `docker ps -q -f name=${DOCKER_NAME} -f status=running`,
@@ -80,7 +115,9 @@ ipcMain.on('docker.run', (_, { port }) => {
 
         // not running, start it ourselves
         exec(
-          `docker run -d -p ${port}:8080 -v "${dataPath}:/algod/data" --name ${DOCKER_NAME} ${DOCKER_TAG}`,
+          `docker run -d -p ${store.get(
+            'port',
+          )}:8080 -v "${dataPath}:/algod/data" --name ${DOCKER_NAME} ${DOCKER_TAG}`,
           (err, stdout) => {
             BrowserWindow.getAllWindows()[0]?.webContents.send(
               'docker.run',
