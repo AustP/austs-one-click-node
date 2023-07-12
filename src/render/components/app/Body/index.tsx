@@ -8,7 +8,6 @@ import { Step } from '@/render/flux/wizardStore';
 
 export default function Body() {
   const buffers = flux.wizard.useState('buffers');
-  const error = flux.wizard.selectState('error');
   const step = flux.wizard.selectState('currentStep');
   const stepStatus = flux.wizard.selectState('stepStatus');
 
@@ -37,10 +36,16 @@ export default function Body() {
           }
         />
         <StatusIndicator
-          active={step === Step.Container_Running}
+          active={
+            step === Step.Container_Running || step === Step.Container_Starting
+          }
           className="mt-2"
           label="Container Running"
-          status={stepStatus[Step.Container_Running]}
+          status={
+            step === Step.Container_Running
+              ? stepStatus[Step.Container_Running]
+              : stepStatus[Step.Container_Starting]
+          }
         />
         <StatusIndicator
           active={step === Step.Node_Running}
@@ -64,7 +69,6 @@ export default function Body() {
       <StepViewer
         buffers={buffers}
         className="grow"
-        error={error}
         status={stepStatus[step]}
         step={step}
       />
