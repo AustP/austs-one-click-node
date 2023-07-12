@@ -9,6 +9,7 @@ export enum Step {
   Container_Running,
   Container_Starting,
   Node_Running,
+  Node_Starting,
   Node_Synced,
   Participating,
 }
@@ -218,6 +219,69 @@ store.register(
       draft.currentStep = Step.Node_Running;
       draft.stepStatus[Step.Node_Running] = Status.Pending;
       flux.dispatch('wizard/checkNodeRunning/results');
+    }),
+);
+
+store.register('wizard/checkNodeRunning/results', async () => {
+  // checking is so fast that we intentionally slow it down for UX
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+
+  const results = await window.docker.running();
+  if (results === '') {
+    return (state) =>
+      produce(state, (draft) => {
+        draft.stepStatus[Step.Node_Running] = Status.Success;
+        flux.dispatch('wizard/startNode');
+      });
+  } else {
+    return (state) =>
+      produce(state, (draft) => {
+        draft.stepStatus[Step.Node_Running] = Status.Success;
+        draft.stepStatus[Step.Node_Starting] = Status.Success;
+        flux.dispatch('wizard/checkNodeSynced');
+      });
+  }
+});
+
+store.register(
+  'wizard/startNode',
+  () => (state) =>
+    produce(state, (draft) => {
+      draft.buffers = { stderr: [], stdout: [] };
+      draft.currentStep = Step.Node_Starting;
+      draft.stepStatus[Step.Node_Starting] = Status.Pending;
+      flux.dispatch('wizard/startNode/results');
+    }),
+);
+
+store.register('wizard/startNode/results', async () => {
+  // starting is so fast that we intentionally slow it down for UX
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+
+  try {
+    await window.goal.start();
+    return (state) =>
+      produce(state, (draft) => {
+        draft.stepStatus[Step.Node_Starting] = Status.Success;
+        flux.dispatch('wizard/checkNodeSynced');
+      });
+  } catch (err) {
+    return (state) =>
+      produce(state, (draft) => {
+        draft.buffers.stderr = [err.toString()];
+        draft.stepStatus[Step.Node_Starting] = Status.Failure;
+      });
+  }
+});
+
+store.register(
+  'wizard/checkNodeSynced',
+  () => (state) =>
+    produce(state, (draft) => {
+      draft.buffers = { stderr: [], stdout: [] };
+      draft.currentStep = Step.Node_Synced;
+      draft.stepStatus[Step.Node_Synced] = Status.Pending;
+      flux.dispatch('wizard/checkNodeSynced/results');
     }),
 );
 
