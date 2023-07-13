@@ -23,6 +23,7 @@ rules.push({
 });
 
 export const rendererConfig: Configuration = {
+  devtool: 'inline-source-map',
   module: {
     rules,
   },

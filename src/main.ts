@@ -56,9 +56,7 @@ const setupCSP = () => {
         'Content-Security-Policy': [
           `connect-src 'self' http://localhost:${store.get(
             'port',
-          )}; default-src 'self' 'unsafe-inline' data: ${
-            isDev ? "'unsafe-eval'" : ''
-          }; font-src https://fonts.gstatic.com`,
+          )}; font-src https://fonts.gstatic.com; object-src 'none'; script-src 'self'; style-src 'unsafe-inline'`,
         ],
       },
     });
