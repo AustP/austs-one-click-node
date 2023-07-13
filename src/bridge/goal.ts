@@ -3,9 +3,29 @@ import { BrowserWindow, ipcMain } from 'electron';
 
 import { DOCKER_NAME } from './docker';
 
-ipcMain.on('goal.catchup', () => {
+const catchpointEndpoints = {
+  'algorand.mainnet':
+    'https://algorand-catchpoints.s3.us-east-2.amazonaws.com/channel/mainnet/latest.catchpoint',
+};
+
+ipcMain.on('goal.catchpoint', (_, { network }) => {
+  // we go through docker because we know our container has curl available
   exec(
-    `docker exec ${DOCKER_NAME} goal node catchup "$(wget -qO - https://algorand-catchpoints.s3.us-east-2.amazonaws.com/channel/mainnet/latest.catchpoint)"`,
+    `docker exec ${DOCKER_NAME} curl -s ${
+      catchpointEndpoints[network as keyof typeof catchpointEndpoints]
+    }`,
+    (err, stdout) =>
+      BrowserWindow.getAllWindows()[0]?.webContents.send(
+        'goal.catchpoint',
+        err,
+        stdout,
+      ),
+  );
+});
+
+ipcMain.on('goal.catchup', (_, { catchpoint }) => {
+  exec(
+    `docker exec ${DOCKER_NAME} goal node catchup ${catchpoint}`,
     (err, stdout) =>
       BrowserWindow.getAllWindows()[0]?.webContents.send(
         'goal.catchup',

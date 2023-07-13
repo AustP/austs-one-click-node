@@ -206,6 +206,57 @@ export default function StepViewer({
           );
         // failures go directly to Node_Syncing
       }
+
+    case Step.Node_Syncing:
+      switch (status) {
+        case Status.Pending:
+          return (
+            <Flush
+              className={`flex flex-col h-[calc(100vh-112px)] w-[calc(67vw-124px)] ${className}`}
+            >
+              <div className="flex items-center gap-2">
+                <Spinner className="!h-6 !w-6" />
+                <div>Syncing the node... (Syncing can take a few hours)</div>
+              </div>
+              {buffers.stderr.length > 0 && (
+                <Console className="mt-8">{buffers.stderr}</Console>
+              )}
+            </Flush>
+          );
+        case Status.Failure:
+          return (
+            <Flush
+              className={`flex flex-col h-[calc(100vh-112px)] w-[calc(67vw-124px)] ${className}`}
+            >
+              <div>
+                The node could not be synced. Please make sure you are connected
+                to the internet and have at least 1GB of free hard drive space.
+              </div>
+              <Button
+                className="mt-4 w-fit"
+                onClick={() => flux.dispatch('wizard/syncNode')}
+              >
+                Try Again
+              </Button>
+              {buffers.stderr.length > 0 && (
+                <Console className="mt-8">{buffers.stderr}</Console>
+              )}
+            </Flush>
+          );
+      }
+
+    case Step.Participating:
+      switch (status) {
+        case Status.Pending:
+          return (
+            <Flush className={className}>
+              <div className="flex items-center gap-2">
+                <Spinner className="!h-6 !w-6" />
+                <div>Checking participation...</div>
+              </div>
+            </Flush>
+          );
+      }
   }
 
   return null;

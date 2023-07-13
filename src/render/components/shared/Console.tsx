@@ -14,7 +14,7 @@ export default function Console({
 
   return (
     <div
-      className={`bg-gray-800 overflow-auto p-4 rounded-md whitespace-pre-wrap ${className}`}
+      className={`bg-gray-200 dark:bg-gray-800 overflow-auto p-4 rounded-md text-xs whitespace-pre ${className}`}
       ref={ref}
     >
       {children}

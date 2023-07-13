@@ -151,6 +151,29 @@ ipcMain.on('docker.stop', () => {
   );
 });
 
+ipcMain.on('docker.teardown', () => {
+  exec(
+    `docker run --entrypoint /bin/sh ${DOCKER_NAME} -c "rm -rf /algod/data"`,
+    (err, stdout) => {
+      if (err) {
+        return BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'docker.teardown',
+          err,
+          stdout,
+        );
+      }
+
+      exec(`docker rm ${DOCKER_NAME}`, (err, stdout) =>
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'docker.teardown',
+          err,
+          stdout,
+        ),
+      );
+    },
+  );
+});
+
 ipcMain.on('docker.version', () => {
   exec('docker version', (err, stdout) =>
     BrowserWindow.getAllWindows()[0]?.webContents.send(
