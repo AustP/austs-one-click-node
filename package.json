@@ -20,7 +20,8 @@
     "publish:linux": "electron-forge publish --platform linux",
     "publish:mac": "electron-forge publish --platform darwin",
     "publish:win": "electron-forge publish --platform win32",
-    "start": "electron-forge start --inspect-electron"
+    "start": "electron-forge start --inspect-electron",
+    "update-libs": "yarn upgrade algoseas-libs"
   },
   "keywords": [],
   "license": "MIT",
