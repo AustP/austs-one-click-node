@@ -15,16 +15,16 @@ enum CatchUpStatus {
 }
 
 export enum Step {
-  Docker_Installed,
-  Container_Built,
+  Check_Docker_Installed,
+  Check_Container_Built,
   Container_Building,
-  Container_Running,
+  Check_Container_Running,
   Container_Starting,
-  Node_Running,
+  Check_Node_Running,
   Node_Starting,
-  Node_Synced,
+  Check_Node_Synced,
   Node_Syncing,
-  Participating,
+  Dashboard,
 }
 
 export enum Status {
@@ -56,14 +56,14 @@ const store = flux.addStore('wizard', {
     stdout: [],
   },
   catchUpStatus: CatchUpStatus.Unchecked,
-  currentStep: Step.Docker_Installed,
+  currentStep: Step.Check_Docker_Installed,
   port: 4160,
   stepStatus: Object.entries(Step).reduce((acc, [, value]) => {
     if (typeof value === 'string') {
       return acc;
     }
 
-    if (value === Step.Docker_Installed) {
+    if (value === Step.Check_Docker_Installed) {
       acc[value] = Status.Pending;
       return acc;
     }
@@ -86,8 +86,8 @@ store.register(
   () => (state) =>
     produce(state, (draft) => {
       draft.buffers = { stderr: [], stdout: [] };
-      draft.currentStep = Step.Docker_Installed;
-      draft.stepStatus[Step.Docker_Installed] = Status.Pending;
+      draft.currentStep = Step.Check_Docker_Installed;
+      draft.stepStatus[Step.Check_Docker_Installed] = Status.Pending;
       flux.dispatch('wizard/checkDocker/results');
     }),
 );
@@ -100,13 +100,13 @@ store.register('wizard/checkDocker/results', async () => {
     await window.docker.version();
     return (state) =>
       produce(state, (draft) => {
-        draft.stepStatus[Step.Docker_Installed] = Status.Success;
+        draft.stepStatus[Step.Check_Docker_Installed] = Status.Success;
         flux.dispatch('wizard/checkContainerBuilt');
       });
   } catch (err) {
     return (state) =>
       produce(state, (draft) => {
-        draft.stepStatus[Step.Docker_Installed] = Status.Failure;
+        draft.stepStatus[Step.Check_Docker_Installed] = Status.Failure;
       });
   }
 });
@@ -116,8 +116,8 @@ store.register(
   () => (state) =>
     produce(state, (draft) => {
       draft.buffers = { stderr: [], stdout: [] };
-      draft.currentStep = Step.Container_Built;
-      draft.stepStatus[Step.Container_Built] = Status.Pending;
+      draft.currentStep = Step.Check_Container_Built;
+      draft.stepStatus[Step.Check_Container_Built] = Status.Pending;
       flux.dispatch('wizard/checkContainerBuilt/results');
     }),
 );
@@ -130,13 +130,13 @@ store.register('wizard/checkContainerBuilt/results', async () => {
   if (results === '') {
     return (state) =>
       produce(state, (draft) => {
-        draft.stepStatus[Step.Container_Built] = Status.Success;
+        draft.stepStatus[Step.Check_Container_Built] = Status.Success;
         flux.dispatch('wizard/buildContainer');
       });
   } else {
     return (state) =>
       produce(state, (draft) => {
-        draft.stepStatus[Step.Container_Built] = Status.Success;
+        draft.stepStatus[Step.Check_Container_Built] = Status.Success;
         draft.stepStatus[Step.Container_Building] = Status.Success;
         flux.dispatch('wizard/checkContainerRunning');
       });
@@ -178,8 +178,8 @@ store.register(
   () => (state) =>
     produce(state, (draft) => {
       draft.buffers = { stderr: [], stdout: [] };
-      draft.currentStep = Step.Container_Running;
-      draft.stepStatus[Step.Container_Running] = Status.Pending;
+      draft.currentStep = Step.Check_Container_Running;
+      draft.stepStatus[Step.Check_Container_Running] = Status.Pending;
       flux.dispatch('wizard/checkContainerRunning/results');
     }),
 );
@@ -192,13 +192,13 @@ store.register('wizard/checkContainerRunning/results', async () => {
   if (results === '') {
     return (state) =>
       produce(state, (draft) => {
-        draft.stepStatus[Step.Container_Running] = Status.Success;
+        draft.stepStatus[Step.Check_Container_Running] = Status.Success;
         flux.dispatch('wizard/startContainer');
       });
   } else {
     return (state) =>
       produce(state, (draft) => {
-        draft.stepStatus[Step.Container_Running] = Status.Success;
+        draft.stepStatus[Step.Check_Container_Running] = Status.Success;
         draft.stepStatus[Step.Container_Starting] = Status.Success;
         flux.dispatch('wizard/checkNodeRunning');
       });
@@ -241,8 +241,8 @@ store.register(
   () => (state) =>
     produce(state, (draft) => {
       draft.buffers = { stderr: [], stdout: [] };
-      draft.currentStep = Step.Node_Running;
-      draft.stepStatus[Step.Node_Running] = Status.Pending;
+      draft.currentStep = Step.Check_Node_Running;
+      draft.stepStatus[Step.Check_Node_Running] = Status.Pending;
       flux.dispatch('wizard/checkNodeRunning/results');
     }),
 );
@@ -255,13 +255,13 @@ store.register('wizard/checkNodeRunning/results', async () => {
   if (results === '') {
     return (state) =>
       produce(state, (draft) => {
-        draft.stepStatus[Step.Node_Running] = Status.Success;
+        draft.stepStatus[Step.Check_Node_Running] = Status.Success;
         flux.dispatch('wizard/startNode');
       });
   } else {
     return (state) =>
       produce(state, (draft) => {
-        draft.stepStatus[Step.Node_Running] = Status.Success;
+        draft.stepStatus[Step.Check_Node_Running] = Status.Success;
         draft.stepStatus[Step.Node_Starting] = Status.Success;
         flux.dispatch('wizard/checkNodeSynced');
       });
@@ -315,8 +315,8 @@ store.register('wizard/checkNodeSynced', () => {
   return (state) =>
     produce(state, (draft) => {
       draft.buffers = { stderr: [], stdout: [] };
-      draft.currentStep = Step.Node_Synced;
-      draft.stepStatus[Step.Node_Synced] = Status.Pending;
+      draft.currentStep = Step.Check_Node_Synced;
+      draft.stepStatus[Step.Check_Node_Synced] = Status.Pending;
       flux.dispatch('wizard/checkNodeSynced/results');
     });
 });
@@ -338,14 +338,14 @@ store.register('wizard/checkNodeSynced/results', async () => {
 
     return (state) =>
       produce(state, (draft) => {
-        draft.stepStatus[Step.Node_Synced] = Status.Success;
+        draft.stepStatus[Step.Check_Node_Synced] = Status.Success;
         draft.stepStatus[Step.Node_Syncing] = Status.Success;
-        flux.dispatch('wizard/checkParticipation');
+        flux.dispatch('wizard/showDashboard');
       });
   } catch (err) {
     return (state) =>
       produce(state, (draft) => {
-        draft.stepStatus[Step.Node_Synced] = Status.Success;
+        draft.stepStatus[Step.Check_Node_Synced] = Status.Success;
         flux.dispatch('wizard/syncNode');
       });
   }
@@ -419,7 +419,7 @@ store.register('wizard/syncNode/results', async () => {
       return (state) =>
         produce(state, (draft) => {
           draft.stepStatus[Step.Node_Syncing] = Status.Success;
-          flux.dispatch('wizard/checkParticipation');
+          flux.dispatch('wizard/showDashboard');
         });
     } catch (err) {
       // still not synced
@@ -443,15 +443,19 @@ store.register('wizard/syncNode/results', async () => {
   }
 });
 
-store.register('wizard/checkParticipation', () => {
+store.register('wizard/showDashboard', () => {
   return (state) =>
     produce(state, (draft) => {
       draft.buffers = { stderr: [], stdout: [] };
-      draft.currentStep = Step.Participating;
-      draft.stepStatus[Step.Participating] = Status.Pending;
-      flux.dispatch('wizard/checkParticipation/results');
+      draft.currentStep = Step.Dashboard;
+      draft.stepStatus[Step.Dashboard] = Status.Pending;
     });
 });
+
+// TODO: incorporate this
+// fetching blocks as msgpack lets us see the cert info
+//   response.cert.prop.oprop // proposer
+//   response.cert.vote[0].snd // voter
 
 // TODO: delete this
 store.register(

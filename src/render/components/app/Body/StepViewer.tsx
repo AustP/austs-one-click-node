@@ -25,7 +25,7 @@ export default function StepViewer({
   step: Step;
 }) {
   switch (step) {
-    case Step.Docker_Installed:
+    case Step.Check_Docker_Installed:
       switch (status) {
         case Status.Pending:
           return (
@@ -57,7 +57,7 @@ export default function StepViewer({
           );
       }
 
-    case Step.Container_Built:
+    case Step.Check_Container_Built:
       switch (status) {
         case Status.Pending:
           return (
@@ -110,7 +110,7 @@ export default function StepViewer({
           );
       }
 
-    case Step.Container_Running:
+    case Step.Check_Container_Running:
       switch (status) {
         case Status.Pending:
           return (
@@ -153,7 +153,7 @@ export default function StepViewer({
           );
       }
 
-    case Step.Node_Running:
+    case Step.Check_Node_Running:
       switch (status) {
         case Status.Pending:
           return (
@@ -193,7 +193,7 @@ export default function StepViewer({
           );
       }
 
-    case Step.Node_Synced:
+    case Step.Check_Node_Synced:
       switch (status) {
         case Status.Pending:
           return (
@@ -245,7 +245,7 @@ export default function StepViewer({
           );
       }
 
-    case Step.Participating:
+    case Step.Dashboard:
       switch (status) {
         case Status.Pending:
           return (
