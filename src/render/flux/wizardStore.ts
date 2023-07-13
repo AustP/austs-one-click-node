@@ -2,6 +2,18 @@ import flux, { Store } from '@aust/react-flux';
 import { addNode, nodeRequest } from 'algoseas-libs/build/algo';
 import { produce } from 'immer';
 
+const CATCHUP_FINISH_DELAY = 7000; // wait this long after catchup is complete to check if node is synced
+const CATCHUP_THRESHOLD = 20000; // catchup is triggered if node is this many blocks behind
+const READY_CHECKS_STARTUP = 7; // how many ready checks after startup to consider node synced
+const SYNC_WATCH_DELAY = 1000; // how long during syncing to wait between checks
+
+enum CatchUpStatus {
+  Unchecked,
+  CatchingUp,
+  Completed,
+  Unneeded,
+}
+
 export enum Step {
   Docker_Installed,
   Container_Built,
@@ -11,6 +23,7 @@ export enum Step {
   Node_Running,
   Node_Starting,
   Node_Synced,
+  Node_Syncing,
   Participating,
 }
 
@@ -25,6 +38,7 @@ type WizardStoreState = {
     stderr: string[];
     stdout: string[];
   };
+  catchUpStatus: CatchUpStatus;
   currentStep: Step;
   port: number;
   stepStatus: Record<Step, Status>;
@@ -41,6 +55,7 @@ const store = flux.addStore('wizard', {
     stderr: [],
     stdout: [],
   },
+  catchUpStatus: CatchUpStatus.Unchecked,
   currentStep: Step.Docker_Installed,
   port: 4160,
   stepStatus: Object.entries(Step).reduce((acc, [, value]) => {
@@ -285,15 +300,16 @@ store.register('wizard/startNode/results', async () => {
 });
 
 let nodeAdded = false;
-store.register('wizard/checkNodeSynced', async () => {
+store.register('wizard/checkNodeSynced', () => {
   if (!nodeAdded) {
-    const token = await window.goal.token();
-    addNode(
-      `http://localhost:${store.selectState('port')}`,
-      token,
-      'X-Algo-API-Token',
-    );
-    nodeAdded = true;
+    window.goal.token().then((token) => {
+      addNode(
+        `http://localhost:${store.selectState('port')}`,
+        token,
+        'X-Algo-API-Token',
+      );
+      nodeAdded = true;
+    });
   }
 
   return (state) =>
@@ -309,8 +325,132 @@ store.register('wizard/checkNodeSynced/results', async () => {
   // checking is so fast that we intentionally slow it down for UX
   await new Promise((resolve) => setTimeout(resolve, 1500));
 
-  let response = await nodeRequest('/v2/status', { maxRetries: 0 });
-  console.log(response);
+  try {
+    // sometimes when the docker container starts, the node will report as ready
+    // even though it is not ready. our workaround is to check for readiness
+    // a few times.
+    let readyTimes = 0;
+    while (readyTimes < READY_CHECKS_STARTUP) {
+      await nodeRequest('/ready', { maxRetries: 0 });
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      readyTimes++;
+    }
+
+    return (state) =>
+      produce(state, (draft) => {
+        draft.stepStatus[Step.Node_Synced] = Status.Success;
+        draft.stepStatus[Step.Node_Syncing] = Status.Success;
+        flux.dispatch('wizard/checkParticipation');
+      });
+  } catch (err) {
+    return (state) =>
+      produce(state, (draft) => {
+        draft.stepStatus[Step.Node_Synced] = Status.Success;
+        flux.dispatch('wizard/syncNode');
+      });
+  }
+});
+
+store.register(
+  'wizard/syncNode',
+  () => (state) =>
+    produce(state, (draft) => {
+      draft.buffers = { stderr: [], stdout: [] };
+      draft.currentStep = Step.Node_Syncing;
+      draft.stepStatus[Step.Node_Syncing] = Status.Pending;
+      flux.dispatch('wizard/syncNode/results');
+    }),
+);
+
+store.register('wizard/syncNode/results', async () => {
+  try {
+    let catchUpStatus = store.selectState('catchUpStatus');
+    if (catchUpStatus === CatchUpStatus.CatchingUp) {
+      let delay = SYNC_WATCH_DELAY;
+      try {
+        // after catching up, the node will report as ready
+        // but the node still needs to download more blocks
+        // so if the request is successful, we know that
+        // we are back to syncing normally. so we wait a bit
+        // and then check sync results again
+        await nodeRequest('/ready', { maxRetries: 0 });
+        catchUpStatus = CatchUpStatus.Completed;
+        delay = CATCHUP_FINISH_DELAY;
+      } catch (err) {
+        // still catching up
+      }
+
+      const output = await window.goal.status();
+      return (state) =>
+        produce(state, (draft) => {
+          draft.buffers.stderr = [output];
+          draft.catchUpStatus = catchUpStatus;
+          setTimeout(() => flux.dispatch('wizard/syncNode/results'), delay);
+        });
+    }
+
+    if (catchUpStatus === CatchUpStatus.Unchecked) {
+      // get the catchpoint for the network
+      const catchpoint = (
+        await window.goal.catchpoint('algorand.mainnet')
+      ).trim();
+      const catchpointRound = +catchpoint.split('#')[0];
+
+      // compare the node to the catchpoint
+      const status = await nodeRequest('/v2/status');
+      const isCatchingUp = status['catchpoint'] === catchpoint;
+      const needsCatchUp =
+        catchpointRound - status['last-round'] > CATCHUP_THRESHOLD;
+
+      // we check to see if it is catching up in case the user
+      // restarts the app during catchup
+      if (isCatchingUp) {
+        catchUpStatus = CatchUpStatus.CatchingUp;
+      } else if (needsCatchUp) {
+        await window.goal.catchup(catchpoint);
+        catchUpStatus = CatchUpStatus.CatchingUp;
+      } else {
+        catchUpStatus = CatchUpStatus.Unneeded;
+      }
+    }
+
+    try {
+      await nodeRequest('/ready', { maxRetries: 0 });
+      return (state) =>
+        produce(state, (draft) => {
+          draft.stepStatus[Step.Node_Syncing] = Status.Success;
+          flux.dispatch('wizard/checkParticipation');
+        });
+    } catch (err) {
+      // still not synced
+      const output = await window.goal.status();
+      return (state) =>
+        produce(state, (draft) => {
+          draft.buffers.stderr = [output];
+          draft.catchUpStatus = catchUpStatus;
+          setTimeout(
+            () => flux.dispatch('wizard/syncNode/results'),
+            SYNC_WATCH_DELAY,
+          );
+        });
+    }
+  } catch (err) {
+    return (state) =>
+      produce(state, (draft) => {
+        draft.buffers.stderr = [err.toString()];
+        draft.stepStatus[Step.Node_Syncing] = Status.Failure;
+      });
+  }
+});
+
+store.register('wizard/checkParticipation', () => {
+  return (state) =>
+    produce(state, (draft) => {
+      draft.buffers = { stderr: [], stdout: [] };
+      draft.currentStep = Step.Participating;
+      draft.stepStatus[Step.Participating] = Status.Pending;
+      flux.dispatch('wizard/checkParticipation/results');
+    });
 });
 
 // TODO: delete this

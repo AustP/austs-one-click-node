@@ -59,10 +59,14 @@ export default function Body() {
           }
         />
         <StatusIndicator
-          active={step === Step.Node_Synced}
+          active={step === Step.Node_Synced || step === Step.Node_Syncing}
           className="mt-2"
           label="Node Synced"
-          status={stepStatus[Step.Node_Synced]}
+          status={
+            step === Step.Node_Synced
+              ? stepStatus[Step.Node_Synced]
+              : stepStatus[Step.Node_Syncing]
+          }
         />
         <StatusIndicator
           active={step === Step.Participating}

@@ -66,6 +66,7 @@ const docker = {
   run: () => sendIPC('docker.run'),
   running: () => sendIPC('docker.running'),
   stop: () => sendIPC('docker.stop'),
+  teardown: () => sendIPC('docker.teardown'),
   version: () => sendIPC('docker.version'),
 };
 
@@ -77,7 +78,9 @@ const electron = {
 };
 
 const goal = {
-  catchup: () => sendIPC('goal.catchup'),
+  catchpoint: (network: 'algorand.mainnet') =>
+    sendIPC('goal.catchpoint', { network }),
+  catchup: (catchpoint: string) => sendIPC('goal.catchup', { catchpoint }),
   start: () => sendIPC('goal.start'),
   status: () => sendIPC('goal.status'),
   stop: () => sendIPC('goal.stop'),
