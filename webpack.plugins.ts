@@ -9,9 +9,13 @@ export const plugins = [
   new ForkTsCheckerWebpackPlugin({
     logger: 'webpack-infrastructure',
   }),
-  new NodePolyfillPlugin({
-    excludeAliases: ['crypto'],
-  }),
+  new NodePolyfillPlugin(),
   new NormalModuleReplacementPlugin(/^ws$/, 'isomorphic-ws'),
-  new NormalModuleReplacementPlugin(/^crypto$/, 'crypto-wrapper'),
+  // force webpack to use the browser versions of these modules (they are all loaded by crypto-browserify)
+  new NormalModuleReplacementPlugin(
+    /^browserify-cipher$/,
+    'browserify-cipher/browser',
+  ),
+  new NormalModuleReplacementPlugin(/^create-hmac$/, 'create-hmac/browser'),
+  new NormalModuleReplacementPlugin(/^randombytes$/, 'randombytes/browser'),
 ];

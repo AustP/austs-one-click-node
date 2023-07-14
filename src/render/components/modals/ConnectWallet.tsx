@@ -17,7 +17,7 @@ export default function ConnectWallet() {
         <div
           className="bg-slate-200 dark:bg-slate-800 cursor-pointer flex items-center p-4 rounded-md"
           key={provider.metadata.id}
-          onClick={provider.connect}
+          onClick={provider.isActive ? provider.disconnect : provider.connect}
         >
           <div className="overflow-hidden rounded-full shadow-md">
             <img
