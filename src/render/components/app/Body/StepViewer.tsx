@@ -76,7 +76,7 @@ export default function StepViewer({
         case Status.Pending:
           return (
             <Flush
-              className={`flex flex-col h-[calc(100vh-112px)] w-[calc(67vw-124px)] ${className}`}
+              className={`flex flex-col h-[calc(100vh-128px)] w-[calc(67vw-124px)] ${className}`}
             >
               <div className="flex items-center gap-2">
                 <Spinner className="!h-6 !w-6" />
@@ -90,7 +90,7 @@ export default function StepViewer({
         case Status.Failure:
           return (
             <Flush
-              className={`flex flex-col h-[calc(100vh-112px)] w-[calc(67vw-124px)] ${className}`}
+              className={`flex flex-col h-[calc(100vh-128px)] w-[calc(67vw-124px)] ${className}`}
             >
               <div>
                 The container could not be built. Please make sure you are
@@ -212,7 +212,7 @@ export default function StepViewer({
         case Status.Pending:
           return (
             <Flush
-              className={`flex flex-col h-[calc(100vh-112px)] w-[calc(67vw-124px)] ${className}`}
+              className={`flex flex-col h-[calc(100vh-128px)] w-[calc(67vw-124px)] ${className}`}
             >
               <div className="flex items-center gap-2">
                 <Spinner className="!h-6 !w-6" />
@@ -226,7 +226,7 @@ export default function StepViewer({
         case Status.Failure:
           return (
             <Flush
-              className={`flex flex-col h-[calc(100vh-112px)] w-[calc(67vw-124px)] ${className}`}
+              className={`flex flex-col h-[calc(100vh-128px)] w-[calc(67vw-124px)] ${className}`}
             >
               <div>
                 The node could not be synced. Please make sure you are connected
