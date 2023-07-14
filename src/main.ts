@@ -29,6 +29,7 @@ const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     height: 720,
+    frame: false,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
@@ -44,6 +45,7 @@ const createWindow = () => {
 
   // remove the menu
   mainWindow.removeMenu();
+  mainWindow.setWindowButtonVisibility(false);
 
   setupCSP();
 };
@@ -121,10 +123,21 @@ ipcMain.on('minimize', () => {
   BrowserWindow.getAllWindows()[0]?.webContents.send('minimize');
 });
 
+ipcMain.on('platform', () => {
+  BrowserWindow.getAllWindows()[0]?.webContents.send(
+    'platform',
+    null,
+    process.platform,
+  );
+});
+
 ipcMain.on('setPort', (_, { port }) => {
   store.set('port', port);
   setupCSP();
   BrowserWindow.getAllWindows()[0]?.webContents.send('setPort');
 });
 
-ipcMain.on('quit', app.quit);
+ipcMain.on('quit', () => {
+  // close all the windows
+  BrowserWindow.getAllWindows().forEach((window) => window.close());
+});

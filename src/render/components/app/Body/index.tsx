@@ -20,8 +20,8 @@ export default function Body() {
 
   // when the component first loads, load config and start going through the steps
   useEffect(() => void flux.dispatch('wizard/loadConfig'), []);
-  // useEffect(() => void flux.dispatch('wizard/checkDocker'), []);
-  useEffect(() => void flux.dispatch('wizard/checkNodeSynced'), []);
+  useEffect(() => void flux.dispatch('wizard/checkDocker'), []);
+  // useEffect(() => void flux.dispatch('wizard/checkNodeSynced'), []);
 
   const providers = useInitializeProviders({
     providers: [{ id: PROVIDER_ID.DEFLY, clientStatic: DeflyWalletConnect }],
