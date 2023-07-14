@@ -58,19 +58,19 @@ export default function Header() {
               className="cursor-pointer flex h-full items-center justify-center"
               onClick={window.electron.minimize}
             >
-              <MinusIcon className="cursor-pointer hover:bg-sky-300 dark:hover:bg-sky-700 h-full shrink-0 hover:text-black dark:hover:text-white transition w-12" />
+              <MinusIcon className="cursor-pointer hover:bg-sky-300 dark:hover:bg-sky-700 h-full p-0.5 shrink-0 hover:text-black dark:hover:text-white transition w-10" />
             </div>
             <div
               className="cursor-pointer flex h-full items-center justify-center"
               onClick={handleMaximize}
             >
-              <SquareIcon className="cursor-pointer hover:bg-sky-300 dark:hover:bg-sky-700 h-full p-1 shrink-0 hover:text-black dark:hover:text-white transition w-12" />
+              <SquareIcon className="cursor-pointer hover:bg-sky-300 dark:hover:bg-sky-700 h-full p-1.5 shrink-0 hover:text-black dark:hover:text-white transition w-10" />
             </div>
             <div
               className="cursor-pointer flex h-full items-center justify-center"
               onClick={window.electron.quit}
             >
-              <XIcon className="cursor-pointer hover:bg-red-500 h-full shrink-0 hover:text-white transition w-12" />
+              <XIcon className="cursor-pointer hover:bg-red-500 h-full p-0.5 shrink-0 hover:text-white transition w-10" />
             </div>
           </>
         )}
