@@ -245,18 +245,7 @@ export default function StepViewer({
           );
       }
 
-    case Step.Dashboard:
-      switch (status) {
-        case Status.Pending:
-          return (
-            <Flush className={className}>
-              <div className="flex items-center gap-2">
-                <Spinner className="!h-6 !w-6" />
-                <div>Checking participation...</div>
-              </div>
-            </Flush>
-          );
-      }
+    // dashboard is it's own component
   }
 
   return null;

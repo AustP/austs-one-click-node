@@ -54,6 +54,30 @@ function sendIPC<T = any>(
   });
 }
 
+import crypto from 'crypto';
+
+let cryptoWrapper: any = {};
+
+let cipher: crypto.Cipher;
+cryptoWrapper.createCipheriv = (algo: any, key: any, iv: any, options: any) =>
+  (cipher = crypto.createCipheriv(algo, key, iv, options));
+cryptoWrapper._cipher_final = () => cipher.final();
+cryptoWrapper._cipher_update = (data: any) => cipher.update(data);
+
+let decipher: crypto.Decipher;
+cryptoWrapper.createDecipheriv = (algo: any, key: any, iv: any, options: any) =>
+  (decipher = crypto.createDecipheriv(algo, key, iv, options));
+cryptoWrapper._decipher_final = () => decipher.final();
+cryptoWrapper._decipher_update = (data: any) => decipher.update(data);
+
+let hmac: crypto.Hmac;
+cryptoWrapper.createHmac = (algo: any, key: any, options: any) =>
+  (hmac = crypto.createHmac(algo, key, options));
+cryptoWrapper._hmac_digest = () => hmac.digest();
+cryptoWrapper._hmac_update = (data: any) => (hmac = hmac.update(data));
+
+cryptoWrapper.randomBytes = (size: any) => crypto.randomBytes(size);
+
 const docker = {
   build: (
     { stderr, stdout } = {
@@ -89,6 +113,7 @@ const goal = {
 
 const store = createStoreBindings('config');
 
+contextBridge.exposeInMainWorld('cryptoWrapper', cryptoWrapper);
 contextBridge.exposeInMainWorld('docker', docker);
 contextBridge.exposeInMainWorld('electron', electron);
 contextBridge.exposeInMainWorld('isDev', () => sendIPC('isDev'));
@@ -97,6 +122,7 @@ contextBridge.exposeInMainWorld('store', store);
 
 declare global {
   interface Window {
+    cryptoWrapper: typeof crypto;
     docker: typeof docker;
     electron: typeof electron;
     isDev: () => Promise<boolean>;
