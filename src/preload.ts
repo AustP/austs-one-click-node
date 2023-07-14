@@ -72,10 +72,12 @@ const docker = {
 
 const electron = {
   maximize: () => sendIPC('maximize'),
+  maximized: () => sendIPC('maximized'),
   minimize: () => sendIPC('minimize'),
   platform: () => sendIPC('platform'),
-  setPort: (port: number) => sendIPC('setPort', { port }),
   quit: () => sendIPC('quit'),
+  setPort: (port: number) => sendIPC('setPort', { port }),
+  unmaximize: () => sendIPC('unmaximize'),
 };
 
 const goal = {

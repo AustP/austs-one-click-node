@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import MinusIcon from '@components/icons/Minus';
 import SquareIcon from '@components/icons/Square';
@@ -8,11 +8,21 @@ import DarkMode from './DarkMode';
 
 export default function Header() {
   const [platform, setPlatform] = useState('');
+  const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(
     () => void (async () => setPlatform(await window.electron.platform()))(),
     [],
   );
+
+  const handleMaximize = useCallback(() => {
+    if (isMaximized) {
+      window.electron.unmaximize();
+    } else {
+      window.electron.maximize();
+    }
+    setIsMaximized(!isMaximized);
+  }, [isMaximized]);
 
   const isMac = platform === 'darwin';
 
@@ -33,10 +43,7 @@ export default function Header() {
             >
               <div className="bg-[#ffbd44] h-3 rounded-full shrink-0 w-3" />
             </div>
-            <div
-              className="cursor-pointer px-1 py-2"
-              onClick={window.electron.maximize}
-            >
+            <div className="cursor-pointer px-1 py-2" onClick={handleMaximize}>
               <div className="bg-[#00ca4e] h-3 rounded-full shrink-0 w-3" />
             </div>
             <div className="grow self-stretch [-webkit-app-region:drag]" />
@@ -47,7 +54,7 @@ export default function Header() {
             <div className="cursor-pointer" onClick={window.electron.minimize}>
               <MinusIcon className="cursor-pointer hover:bg-sky-300 dark:hover:bg-sky-700 p-1 shrink-0 hover:text-black dark:hover:text-white transition w-12" />
             </div>
-            <div className="cursor-pointer" onClick={window.electron.maximize}>
+            <div className="cursor-pointer" onClick={handleMaximize}>
               <SquareIcon className="cursor-pointer hover:bg-sky-300 dark:hover:bg-sky-700 p-2 shrink-0 hover:text-black dark:hover:text-white transition w-12" />
             </div>
             <div className="cursor-pointer" onClick={window.electron.quit}>
