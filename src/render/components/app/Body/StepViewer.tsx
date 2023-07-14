@@ -40,8 +40,9 @@ export default function StepViewer({
           return (
             <Flush className={className}>
               <div>
-                It seems that docker has not been installed on your system.
-                Please download and install docker before continuing. View the{' '}
+                It seems that docker has not been installed on your system or it
+                is not running. Please download, install and start docker before
+                continuing. View the{' '}
                 <Link href="https://docs.docker.com/get-docker/">
                   official docker documentation
                 </Link>{' '}
