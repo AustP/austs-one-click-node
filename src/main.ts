@@ -45,7 +45,7 @@ const createWindow = () => {
 
   // remove the menu
   mainWindow.removeMenu();
-  mainWindow.setWindowButtonVisibility(false);
+  mainWindow.setWindowButtonVisibility?.(false);
 
   setupCSP();
 };
@@ -113,6 +113,14 @@ ipcMain.on('maximize', () => {
   BrowserWindow.getAllWindows()[0]?.webContents.send('maximize');
 });
 
+ipcMain.on('maximized', () => {
+  BrowserWindow.getAllWindows()[0]?.webContents.send(
+    'maximized',
+    null,
+    BrowserWindow.getAllWindows()[0]?.isMaximized(),
+  );
+});
+
 ipcMain.on('minimize', () => {
   if (process.platform === 'darwin') {
     app.hide();
@@ -131,13 +139,18 @@ ipcMain.on('platform', () => {
   );
 });
 
+ipcMain.on('quit', () => {
+  // close all the windows
+  BrowserWindow.getAllWindows().forEach((window) => window.close());
+});
+
 ipcMain.on('setPort', (_, { port }) => {
   store.set('port', port);
   setupCSP();
   BrowserWindow.getAllWindows()[0]?.webContents.send('setPort');
 });
 
-ipcMain.on('quit', () => {
-  // close all the windows
-  BrowserWindow.getAllWindows().forEach((window) => window.close());
+ipcMain.on('unmaximize', () => {
+  BrowserWindow.getAllWindows()[0]?.unmaximize();
+  BrowserWindow.getAllWindows()[0]?.webContents.send('unmaximize');
 });
