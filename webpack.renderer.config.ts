@@ -29,6 +29,9 @@ export const rendererConfig: Configuration = {
   },
   plugins,
   resolve: {
+    alias: {
+      'crypto-wrapper': path.resolve(__dirname, 'src', 'crypto.ts'),
+    },
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css'],
     plugins: [new TSConfigPathsPlugin({ baseUrl: '.' })],
   },

@@ -30,6 +30,7 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     height: 720,
     webPreferences: {
+      nodeIntegration: true,
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
     width: 1024,
@@ -54,9 +55,9 @@ const setupCSP = () => {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          `connect-src 'self' http://localhost:${store.get(
+          `connect-src 'self' data: http://localhost:${store.get(
             'port',
-          )}; font-src https://fonts.gstatic.com; object-src 'none'; script-src 'self'; style-src 'unsafe-inline'`,
+          )} https://static.defly.app wss://*.walletconnect.org wss://*.defly.app; font-src 'self' https://fonts.gstatic.com; object-src 'none'; script-src 'self'; style-src 'unsafe-inline' https://fonts.googleapis.com`,
         ],
       },
     });
