@@ -79,7 +79,7 @@ export default function AccountSelector({
       onOutsideClicked={close}
       open={open}
       render={() => (
-        <div className="bg-slate-100 dark:bg-slate-900 -mt-10 rounded-md shadow-md text-slate-900 dark:text-slate-100 text-sm w-96">
+        <div className="bg-slate-100 dark:bg-slate-900 max-h-80 -mt-10 overflow-y-auto rounded-md shadow-md text-slate-900 dark:text-slate-100 text-sm w-96">
           {providers?.map((provider) => (
             <div
               className="border-b border-slate-500 py-2"
@@ -106,16 +106,27 @@ export default function AccountSelector({
               </div>
               {provider.accounts.map((account) => (
                 <div
-                  className={`hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer flex items-center justify-between group px-4 py-1 ${
+                  className={`hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer flex items-center group px-4 py-1 ${
                     account.address === selectedAccount ? '' : 'text-slate-500'
                   }`}
                   key={account.address}
                   onClick={() => setSelectedAccountAndClose(account.address)}
                 >
+                  <div
+                    className={`${
+                      flux.accounts.selectState(
+                        'participating',
+                        account.address,
+                      )
+                        ? 'bg-green-500'
+                        : 'bg-red-500'
+                    } h-2 mx-2 rounded-full w-2`}
+                  />
                   <div>
                     {account.address.substring(0, 6)}...
                     {account.address.substring(account.address.length - 4)}
                   </div>
+                  <div className="grow" />
                   <CheckIcon
                     className={`h-6 ${
                       account.address === selectedAccount ? '' : 'opacity-0'
@@ -141,16 +152,22 @@ export default function AccountSelector({
               .filter((account) => !connectedAccountsList.includes(account))
               .map((account) => (
                 <div
-                  className={`hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer flex items-center justify-between group px-4 py-1 ${
-                    account === selectedAccount ? '' : 'text-slate-500'
-                  }`}
+                  className="hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer flex items-center group px-4 py-1"
                   key={account}
                   onClick={() => setSelectedAccountAndClose(account)}
                 >
+                  <div
+                    className={`${
+                      flux.accounts.selectState('participating', account)
+                        ? 'bg-green-500'
+                        : 'bg-red-500'
+                    } h-2 mx-2 rounded-full w-2`}
+                  />
                   <div>
                     {account.substring(0, 6)}...
                     {account.substring(account.length - 4)}
                   </div>
+                  <div className="grow" />
                   <CheckIcon
                     className={`h-6 ${
                       account === selectedAccount ? '' : 'opacity-0'

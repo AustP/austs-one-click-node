@@ -29,6 +29,7 @@ type AccountsStoreState = {
   accounts: Record<string, Account>;
 
   // selectors
+  anyParticipating: boolean;
   get: Account;
   list: string[];
   participating: boolean;
@@ -47,7 +48,9 @@ function b64ToUint8Array(b64: string): Uint8Array {
   return new Uint8Array(Buffer.from(b64, 'base64'));
 }
 
-const store = flux.addStore('accounts', {}) as any as Store<AccountsStoreState>;
+const store = flux.addStore('accounts', {
+  accounts: {},
+}) as any as Store<AccountsStoreState>;
 
 store.register('accounts/load', async () => {
   const accounts = await window.store.get('accounts', {});
@@ -116,6 +119,7 @@ store.register(
     produce(state, (draft) => {
       draft.accounts[address].stats.lastProposedBlock = block;
       draft.accounts[address].stats.proposals++;
+      flux.dispatch('accounts/save');
     }),
 );
 
@@ -124,7 +128,16 @@ store.register(
   (_, address: string) => (state) =>
     produce(state, (draft) => {
       draft.accounts[address].stats.votes++;
+      if (draft.accounts[address].stats.votes % 10 === 0) {
+        flux.dispatch('accounts/save');
+      }
     }),
+);
+
+store.addSelector('anyParticipating', (state) =>
+  Object.values(state.accounts).some(
+    (account) => account.chainParticipation.voteKey !== undefined,
+  ),
 );
 
 store.addSelector('get', (state, address) => state.accounts[address]);

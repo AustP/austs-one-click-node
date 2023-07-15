@@ -63,7 +63,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-3 grid-rows-2">
         <StatNumber label="Current Block" stat={formatNumber(lastBlock)} />
         <StatNumber label="Blocks Proposed" stat={totalProposals} />
-        <StatNumber label="Blocks Verified" stat={totalVotes} />
+        <StatNumber label="Blocks Voted" stat={totalVotes} />
         <StatNumber label="Accounts" stat={accounts.length} />
         <StatNumber
           label="Participating Stake"
