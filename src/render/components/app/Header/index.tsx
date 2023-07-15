@@ -27,7 +27,7 @@ export default function Header() {
   const isMac = platform === 'darwin';
 
   return (
-    <div className="bg-sky-200 dark:bg-sky-800">
+    <div className="bg-sky-600 dark:bg-sky-900 text-slate-50">
       <div className="flex h-6 items-center">
         {isMac ? (
           <>
