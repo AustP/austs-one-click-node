@@ -11,7 +11,7 @@ export default function Button({
 }) {
   return (
     <div
-      className={`bg-slate-900 dark:bg-slate-100 ${
+      className={`bg-slate-800 dark:bg-slate-200 ${
         disabled ? 'opacity-50' : 'cursor-pointer hover:opacity-90'
       } inline-block px-3 py-2 rounded-md text-center text-slate-100 dark:text-slate-900 ${className}`}
       onClick={() => {

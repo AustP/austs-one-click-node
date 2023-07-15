@@ -1,19 +1,24 @@
 // svg from iconoir.com
 
-export default function Antenna({ className = '' }: { className?: string }) {
+export default function Wallet({ className = '' }: { className?: string }) {
   return (
     <svg
       className={className}
       width="32px"
-      height="32px"
       strokeWidth="1.5"
+      height="32px"
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       color="currentColor"
     >
       <path
-        d="M12 5a1 1 0 100-2 1 1 0 000 2z"
+        d="M19 20H5a2 2 0 01-2-2V9a2 2 0 012-2h14a2 2 0 012 2v9a2 2 0 01-2 2z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      ></path>
+      <path
+        d="M16.5 14a.5.5 0 110-1 .5.5 0 010 1z"
         fill="currentColor"
         stroke="currentColor"
         strokeWidth="1.5"
@@ -21,11 +26,9 @@ export default function Antenna({ className = '' }: { className?: string }) {
         strokeLinejoin="round"
       ></path>
       <path
-        d="M16 1s1.5 1 1.5 3S16 7 16 7M8 1S6.5 2 6.5 4 8 7 8 7M7 23l1.111-4M17 23l-1.111-4M14.5 14L12 5l-2.5 9m5 0h-5m5 0l1.389 5M9.5 14l-1.389 5m0 0h7.778"
+        d="M18 7V5.603a2 2 0 00-2.515-1.932l-11 2.933A2 2 0 003 8.537V9"
         stroke="currentColor"
         strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
       ></path>
     </svg>
   );
