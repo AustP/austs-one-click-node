@@ -7,7 +7,7 @@ import {
 } from '@txnlab/use-wallet';
 import { useEffect } from 'react';
 
-import { Step } from '@/render/flux/wizardStore';
+import { Status, Step } from '@/render/flux/wizardStore';
 
 import Column from './Column';
 import Dashboard from './Dashboard';
@@ -23,6 +23,8 @@ export default function Body() {
   useEffect(() => void flux.dispatch('wizard/loadConfig'), []);
   useEffect(() => void flux.dispatch('wizard/checkDocker'), []);
   useEffect(() => void flux.dispatch('accounts/load'), []);
+
+  const anyParticipating = flux.accounts.useState('anyParticipating');
 
   const providers = useInitializeProviders({
     providers: [{ id: PROVIDER_ID.DEFLY, clientStatic: DeflyWalletConnect }],
@@ -92,7 +94,13 @@ export default function Body() {
             active={step === Step.Dashboard}
             className="mt-2"
             label="Participating in Consensus"
-            status={stepStatus[Step.Dashboard]}
+            status={
+              step === Step.Dashboard
+                ? anyParticipating
+                  ? Status.Success
+                  : Status.Pending
+                : stepStatus[Step.Dashboard]
+            }
           />
         </Column>
         {step === Step.Dashboard ? (
