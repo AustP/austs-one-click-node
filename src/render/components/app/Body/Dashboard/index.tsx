@@ -59,11 +59,11 @@ export default function Dashboard() {
   }, [accounts, lastBlock]);
 
   return (
-    <div className="grow">
+    <div className="flex flex-col h-[calc(100vh-128px)] grow">
       <div className="grid grid-cols-3 grid-rows-2">
         <StatNumber label="Current Block" stat={formatNumber(lastBlock)} />
-        <StatNumber label="Total Proposals" stat={totalProposals} />
-        <StatNumber label="Total Votes" stat={totalVotes} />
+        <StatNumber label="Blocks Proposed" stat={totalProposals} />
+        <StatNumber label="Blocks Verified" stat={totalVotes} />
         <StatNumber label="Accounts" stat={accounts.length} />
         <StatNumber
           label="Participating Stake"
@@ -71,7 +71,7 @@ export default function Dashboard() {
         />
         <AntennaIcon className="h-16 place-self-center text-slate-200 dark:text-slate-800 w-16" />
       </div>
-      {/* <ConnectWalletModal /> */}
+      <div className="bg-slate-200 dark:bg-slate-800 grow rounded-md"></div>
     </div>
   );
 }
