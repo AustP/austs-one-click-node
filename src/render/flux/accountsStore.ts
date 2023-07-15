@@ -57,7 +57,7 @@ store.register('accounts/load', async () => {
     });
 });
 
-store.register('accounts/fetch', async (_, address: string) => {
+store.register('accounts/add', async (_, address: string) => {
   try {
     const response = await nodeRequest(`/v2/accounts/${address}`);
     return (state) =>
@@ -94,6 +94,8 @@ store.register('accounts/fetch', async (_, address: string) => {
             votes: state.accounts[address]?.stats.votes || 0,
           },
         };
+
+        flux.dispatch('accounts/save');
       });
   } catch (err) {
     flux.dispatch(
@@ -129,7 +131,7 @@ store.addSelector('get', (state, address) => state.accounts[address]);
 
 store.addSelector('list', (state) =>
   Object.values(state.accounts)
-    .sort((a, b) => a.algoAmount - b.algoAmount)
+    .sort((a, b) => b.algoAmount - a.algoAmount)
     .map((a) => a.address),
 );
 
@@ -147,6 +149,7 @@ store.addSelector('totalProposals', (state) =>
 
 store.addSelector('totalStake', (state) =>
   Object.values(state.accounts)
+    .filter((account) => store.selectState('participating', account.address))
     .map((account) => account.algoAmount)
     .reduce((total, algoAmount) => total + algoAmount, 0),
 );

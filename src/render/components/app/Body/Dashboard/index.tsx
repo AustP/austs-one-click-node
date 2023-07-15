@@ -1,17 +1,17 @@
 import flux from '@aust/react-flux';
-import { useWallet } from '@txnlab/use-wallet';
 import algosdk from 'algosdk';
 import { nodeRequest } from 'algoseas-libs/build/algo';
 import { useEffect, useState } from 'react';
 
 import AntennaIcon from '@components/icons/Antenna';
-import ConnectWalletModal from '@components/modals/ConnectWallet';
 import { abbreviateNumber, formatNumber } from '@/render/utils';
 
+import AccountSelector from './AccountSelector';
 import StatNumber from './StatNumber';
 
 export default function Dashboard() {
   const [lastBlock, setLastBlock] = useState(0);
+  const [selectedAccount, setSelectedAccount] = useState('');
 
   const accounts = flux.accounts.useState('list');
   const totalProposals = flux.accounts.selectState('totalProposals');
@@ -71,7 +71,12 @@ export default function Dashboard() {
         />
         <AntennaIcon className="h-16 place-self-center text-slate-200 dark:text-slate-800 w-16" />
       </div>
-      <div className="bg-slate-200 dark:bg-slate-800 grow rounded-md"></div>
+      <div className="bg-slate-200 dark:bg-slate-800 grow p-4 rounded-md text-sm">
+        <AccountSelector
+          selectedAccount={selectedAccount}
+          setSelectedAccount={setSelectedAccount}
+        />
+      </div>
     </div>
   );
 }
