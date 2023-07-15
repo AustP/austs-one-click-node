@@ -7,11 +7,12 @@ import {
 } from '@txnlab/use-wallet';
 import { useEffect } from 'react';
 
+import { Step } from '@/render/flux/wizardStore';
+
 import Column from './Column';
 import Dashboard from './Dashboard';
 import StatusIndicator from './StatusIndicator';
 import StepViewer from './StepViewer';
-import { Step } from '@/render/flux/wizardStore';
 
 export default function Body() {
   const buffers = flux.wizard.useState('buffers');
@@ -21,7 +22,7 @@ export default function Body() {
   // when the component first loads, load config and start going through the steps
   useEffect(() => void flux.dispatch('wizard/loadConfig'), []);
   useEffect(() => void flux.dispatch('wizard/checkDocker'), []);
-  // useEffect(() => void flux.dispatch('wizard/checkNodeSynced'), []);
+  useEffect(() => void flux.dispatch('accounts/load'), []);
 
   const providers = useInitializeProviders({
     providers: [{ id: PROVIDER_ID.DEFLY, clientStatic: DeflyWalletConnect }],

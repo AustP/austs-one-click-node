@@ -1,6 +1,6 @@
 import flux from '@aust/react-flux';
 
-// import './noticesStore';
+import './accountsStore';
 import './wizardStore';
 
 window.isDev().then((isDev) => {
