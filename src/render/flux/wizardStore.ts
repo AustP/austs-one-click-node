@@ -452,21 +452,6 @@ store.register('wizard/showDashboard', () => {
     });
 });
 
-// TODO: incorporate this
-// fetching blocks as msgpack lets us see the cert info
-//   response.cert.prop.oprop // proposer
-//   response.cert.vote[0].snd // voter
-
-// TODO: delete this
-store.register(
-  'wizard/setStep',
-  (_, step: Step, status: Status) => (state) =>
-    produce(state, (draft) => {
-      draft.currentStep = step;
-      draft.stepStatus[step] = status;
-    }),
-);
-
 store.register(
   'wizard/stderr',
   (_, data) => (state) =>
