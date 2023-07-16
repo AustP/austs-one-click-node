@@ -11,9 +11,9 @@ export default function Button({
 }) {
   return (
     <div
-      className={`bg-slate-800 dark:bg-slate-200 ${
+      className={`bg-sky-600 dark:bg-sky-900 ${
         disabled ? 'opacity-50' : 'cursor-pointer hover:opacity-90'
-      } inline-block px-3 py-2 rounded-md text-center text-slate-100 dark:text-slate-900 ${className}`}
+      } inline-block px-3 py-2 rounded-md text-center text-slate-50 ${className}`}
       onClick={() => {
         if (!disabled) {
           onClick();

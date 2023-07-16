@@ -3,6 +3,8 @@ import algosdk from 'algosdk';
 import { nodeRequest } from 'algoseas-libs/build/algo';
 import { produce } from 'immer';
 
+const VOTE_SAVE_INTERVAL = 60_000; // 30 seconds
+
 type ParticipationDetails = {
   selectionKey?: Uint8Array;
   stateProofKey?: Uint8Array;
@@ -109,6 +111,25 @@ store.register('accounts/add', async (_, address: string) => {
 });
 
 store.register(
+  'accounts/remove',
+  (_, account: string) => (state) =>
+    produce(state, (draft) => {
+      delete draft.accounts[account];
+      flux.dispatch('accounts/save');
+    }),
+);
+
+store.register(
+  'accounts/reset-stats',
+  (_, account: string) => (state) =>
+    produce(state, (draft) => {
+      draft.accounts[account].stats.proposals = 0;
+      draft.accounts[account].stats.votes = 0;
+      flux.dispatch('accounts/save');
+    }),
+);
+
+store.register(
   'accounts/save',
   () => void window.store.set('accounts', store.selectState().accounts),
 );
@@ -123,12 +144,15 @@ store.register(
     }),
 );
 
+let lastVoteSave = 0;
 store.register(
   'accounts/stats/addVote',
   (_, address: string) => (state) =>
     produce(state, (draft) => {
       draft.accounts[address].stats.votes++;
-      if (draft.accounts[address].stats.votes % 10 === 0) {
+      let now = new Date().getTime();
+      if (now - lastVoteSave > VOTE_SAVE_INTERVAL) {
+        lastVoteSave = now;
         flux.dispatch('accounts/save');
       }
     }),
