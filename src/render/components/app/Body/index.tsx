@@ -7,6 +7,7 @@ import {
 } from '@txnlab/use-wallet';
 import { useEffect } from 'react';
 
+import GearIcon from '@components/icons/Gear';
 import { Status, Step } from '@/render/flux/wizardStore';
 
 import Column from './Column';
@@ -33,7 +34,7 @@ export default function Body() {
   return (
     <WalletProvider value={providers}>
       <div className="flex gap-6 grow p-6">
-        <Column className="w-1/3">
+        <Column className="flex flex-col w-1/3">
           <div className="font-light mb-6 text-xl">Node Overview</div>
           <StatusIndicator
             active={step === Step.Check_Docker_Installed}
@@ -102,6 +103,16 @@ export default function Body() {
                 : stepStatus[Step.Dashboard]
             }
           />
+          <div className="grow" />
+          {/* TODO: if it says stop, make the button blue */}
+          <div className="bg-green-600 cursor-pointer flex items-center overflow-hidden rounded-md text-slate-100">
+            <div className="hover:bg-green-500 border-r border-green-300 grow h-full place-self-center py-2 text-center text-2xl">
+              Start
+            </div>
+            <div className="hover:bg-green-500 h-full flex items-center p-2">
+              <GearIcon className="h-5 w-5" />
+            </div>
+          </div>
         </Column>
         {step === Step.Dashboard ? (
           <Dashboard />
