@@ -70,7 +70,7 @@ export default function Header() {
               className="cursor-pointer flex h-full items-center justify-center"
               onClick={window.electron.quit}
             >
-              <XIcon className="cursor-pointer hover:bg-red-500 h-full p-0.5 shrink-0 hover:text-white transition w-10" />
+              <XIcon className="cursor-pointer hover:bg-red-600 h-full p-0.5 shrink-0 hover:text-white transition w-10" />
             </div>
           </>
         )}
