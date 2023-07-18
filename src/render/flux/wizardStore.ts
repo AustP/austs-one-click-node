@@ -3,7 +3,7 @@ import { addNode, nodeRequest } from 'algoseas-libs/build/algo';
 import { produce } from 'immer';
 
 const CATCHUP_FINISH_DELAY = 7000; // wait this long after catchup is complete to check if node is synced
-const CATCHUP_THRESHOLD = 20000; // catchup is triggered if node is this many blocks behind
+const CATCHUP_THRESHOLD = 720000; // catchup is triggered if node is this many blocks behind. ~100 blocks downloaded per sec. ~2 hrs to catchup
 const READY_CHECKS_STARTUP = 7; // how many ready checks after startup to consider node synced
 const SYNC_WATCH_DELAY = 1000; // how long during syncing to wait between checks
 
