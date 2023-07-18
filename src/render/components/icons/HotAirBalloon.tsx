@@ -20,7 +20,7 @@ export default function HotAirBalloon({
         d="M4 9.5c0 4.571 5.714 8 5.714 8h4.572S20 14.071 20 9.5s-3.582-8-8-8-8 3.429-8 8z"
         stroke="currentColor"
         strokeWidth="1.5"
-        stroke-miterlimit="1.5"
+        strokeMiterlimit="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       ></path>
