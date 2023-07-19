@@ -81,9 +81,22 @@ const electron = {
 };
 
 const goal = {
+  addpartkey: (
+    { account, firstValid, lastValid } = {
+      account: '',
+      firstValid: 0,
+      lastValid: 0,
+    },
+  ) =>
+    sendIPC('goal.addpartkey', {
+      account,
+      firstValid,
+      lastValid,
+    }),
   catchpoint: (network: 'algorand.mainnet') =>
     sendIPC('goal.catchpoint', { network }),
   catchup: (catchpoint: string) => sendIPC('goal.catchup', { catchpoint }),
+  deletepartkey: (id: string) => sendIPC('goal.deletepartkey', { id }),
   start: () => sendIPC('goal.start'),
   status: () => sendIPC('goal.status'),
   stop: () => sendIPC('goal.stop'),

@@ -1,32 +1,38 @@
 import flux from '@aust/react-flux';
 import { useWallet } from '@txnlab/use-wallet';
 import Dropdown from 'algoseas-libs/build/react/Dropdown';
+import { useCallback, useState } from 'react';
 
 import Button from '@components/shared/Button';
+import CopySnippet from '@components/shared/CopySnippet';
+import Error from '@components/shared/Error';
 import GearIcon from '@components/icons/Gear';
 import HotAirBalloonIcon from '@components/icons/HotAirBalloon';
 import KeyIcon from '@components/icons/Key';
+import Spinner from '@components/shared/Spinner';
 import { formatNumber } from '@/render/utils';
 
 import AccountSelector from './AccountSelector';
 import StatNumber from './StatNumber';
 
-const EXPIRING_KEYS_THRESHOLD = 200000; // about a week's worth of blocks
+const EXPIRING_KEYS_THRESHOLD = 268800; // about two week's worth of blocks
+// const PARTICIPATION_PERIOD = 3000000; // about 3 months worth of blocks
+const PARTICIPATION_PERIOD = 300000;
 
 export default function AccountViewer({
-  accounts,
   className = '',
   lastBlock,
   selectedAccount,
   setSelectedAccount,
 }: {
-  accounts: string[];
   className?: string;
   lastBlock: number;
   selectedAccount: string;
   setSelectedAccount: (account: string) => void;
 }) {
   const { connectedAccounts } = useWallet();
+  const [generatingKeys, setGeneratingKeys] = useState(false);
+  const [generationError, setGenerationError] = useState('');
 
   const account = flux.accounts.selectState('get', selectedAccount);
   const hasKeys = account?.nodeParticipation.selectionKey !== undefined;
@@ -34,7 +40,9 @@ export default function AccountViewer({
     'participating',
     selectedAccount,
   );
-  const canRemove = !participating || (participating && !hasKeys);
+  const sameKeys =
+    account?.chainParticipation.voteKey === account?.nodeParticipation.voteKey;
+  const canRemove = !generatingKeys && !(participating && sameKeys);
   const accountConnected = connectedAccounts
     .map((account) => account.address)
     .includes(selectedAccount);
@@ -42,10 +50,33 @@ export default function AccountViewer({
     (account?.nodeParticipation.voteLast || 0) - lastBlock <
     EXPIRING_KEYS_THRESHOLD;
 
+  const generateKeys = useCallback(async () => {
+    setGenerationError('');
+    setGeneratingKeys(true);
+
+    try {
+      await window.goal.addpartkey({
+        account: selectedAccount,
+        firstValid: lastBlock,
+        lastValid: lastBlock + PARTICIPATION_PERIOD,
+      });
+
+      // if we re-add the account, it will load the key information
+      await flux.dispatch('accounts/add', selectedAccount);
+    } catch (err) {
+      setGenerationError(err.toString());
+    }
+
+    setGeneratingKeys(false);
+  }, [lastBlock, selectedAccount]);
+
   return (
-    <div className="bg-slate-200 dark:bg-slate-800 flex flex-col grow p-4 rounded-md text-sm">
+    <div
+      className={`bg-slate-200 dark:bg-slate-800 flex flex-col h-[calc(100vh-336px)] p-4 rounded-md text-sm ${className}`}
+    >
       <div className="flex items-center">
         <AccountSelector
+          disabled={generatingKeys}
           selectedAccount={selectedAccount}
           setSelectedAccount={setSelectedAccount}
         />
@@ -75,13 +106,47 @@ export default function AccountViewer({
                   </div>
                   <div
                     className={`${
+                      !generatingKeys
+                        ? 'hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer'
+                        : 'text-slate-500'
+                    } border-b border-slate-500 px-4 py-2`}
+                    onClick={() => {
+                      if (!generatingKeys) {
+                        generateKeys();
+                      }
+                    }}
+                  >
+                    {hasKeys ? 'Re-' : ''}Generate Keys
+                  </div>
+                  {hasKeys && (
+                    <div
+                      className={`${
+                        !participating || !sameKeys
+                          ? 'hover:bg-red-600 cursor-pointer hover:text-slate-100'
+                          : 'text-slate-500'
+                      } border-b border-slate-500 px-4 py-2`}
+                      onClick={async () => {
+                        if (!participating || !sameKeys) {
+                          await window.goal.deletepartkey(
+                            account.nodeParticipation.id!,
+                          );
+                          // re-load the account to get the new key information
+                          flux.dispatch('accounts/add', selectedAccount);
+                        }
+                      }}
+                    >
+                      Remove Keys
+                    </div>
+                  )}
+                  <div
+                    className={`${
                       canRemove
-                        ? 'hover:bg-red-600 cursor-pointer'
+                        ? 'hover:bg-red-600 cursor-pointer hover:text-slate-100'
                         : 'text-slate-500'
                     } px-4 py-2`}
-                    onClick={() => {
+                    onClick={async () => {
                       if (canRemove) {
-                        flux.dispatch('accounts/remove', selectedAccount);
+                        await flux.dispatch('accounts/remove', selectedAccount);
                         setSelectedAccount('');
                       }
                     }}
@@ -104,76 +169,153 @@ export default function AccountViewer({
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-6 grow mt-6">
-          <div className="flex items-center justify-between">
-            <StatNumber
-              label={participating ? 'Participating Stake' : 'Available Stake'}
-              small
-              stat={formatNumber(account.algoAmount / 1000000)}
-            />
-            <StatNumber
-              label="Last Proposed Block"
-              small
-              stat={
-                account.stats.lastProposedBlock > 0
-                  ? formatNumber(account.stats.lastProposedBlock)
-                  : 'N/A'
-              }
-            />
-            <StatNumber
-              label="Blocks Proposed"
-              small
-              stat={formatNumber(account.stats.proposals)}
-            />
-            <StatNumber
-              label="Blocks Voted"
-              small
-              stat={formatNumber(account.stats.votes)}
-            />
-          </div>
-          <div className="flex flex-col grow justify-center w-full">
-            {!hasKeys ? (
-              <div className="flex items-center">
-                <div className="h-32 ml-4 relative w-32">
-                  <KeyIcon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-45 h-32 text-slate-300 dark:text-slate-700 opacity-70 w-32" />
-                  <KeyIcon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 h-32 text-slate-300 dark:text-slate-700 opacity-70 w-32" />
-                  <KeyIcon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-[135deg] h-32 text-slate-300 dark:text-slate-700 opacity-70 w-32" />
-                </div>
-                <div className="flex flex-col grow ml-10 text-slate-700 dark:text-slate-300">
-                  <div>
-                    <div>No keys have been generated for this account.</div>
-                    <div className="mt-4 text-xs">
-                      Generating keys takes about five minutes. These keys are
-                      used only for consensus, and are incapable of spending
-                      funds.
-                    </div>
+        <>
+          <div className="flex flex-col gap-4 grow my-4 -mx-4 overflow-y-auto px-4">
+            <div className="flex items-center justify-between">
+              <StatNumber
+                label={
+                  participating ? 'Participating Stake' : 'Available Stake'
+                }
+                small
+                stat={formatNumber(account.algoAmount / 1000000)}
+              />
+              <StatNumber
+                label="Last Proposed Block"
+                small
+                stat={
+                  account.stats.lastProposedBlock > 0
+                    ? formatNumber(account.stats.lastProposedBlock)
+                    : 'N/A'
+                }
+              />
+              <StatNumber
+                label="Blocks Proposed"
+                small
+                stat={formatNumber(account.stats.proposals)}
+              />
+              <StatNumber
+                label="Blocks Voted"
+                small
+                stat={formatNumber(account.stats.votes)}
+              />
+            </div>
+            <div className="flex flex-col grow justify-center w-full">
+              {!hasKeys || generatingKeys ? (
+                <div className="flex items-center">
+                  <div className="h-20 ml-4 relative shrink-0 w-20">
+                    <KeyIcon className="absolute h-32 left-1/2 opacity-70 -rotate-45 text-slate-300 dark:text-slate-700 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32" />
+                    <KeyIcon className="absolute h-32 left-1/2 opacity-70 -rotate-90 text-slate-300 dark:text-slate-700 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32" />
+                    <KeyIcon className="absolute h-32 left-1/2 opacity-70 -rotate-[135deg] text-slate-300 dark:text-slate-700 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32" />
                   </div>
-                  <Button className="mt-4 w-fit" onClick={() => {}}>
-                    Generate Keys
-                  </Button>
+                  <div className="flex flex-col grow ml-10 text-slate-700 dark:text-slate-300">
+                    <div>
+                      {generatingKeys ? (
+                        <div className="flex items-center gap-2">
+                          <Spinner className="!h-6 !w-6" />
+                          <div>Generating keys...</div>
+                        </div>
+                      ) : (
+                        <div>No keys have been generated for this account.</div>
+                      )}
+                      <div className="mt-4 text-xs">
+                        Generating keys takes about five minutes. These keys are
+                        used only for consensus, and are incapable of spending
+                        funds.
+                      </div>
+                    </div>
+                    <Button
+                      className={`${
+                        generatingKeys ? 'h-0 invisible' : 'mt-4'
+                      } w-fit`}
+                      disabled={generatingKeys}
+                      onClick={generateKeys}
+                    >
+                      Generate Keys
+                    </Button>
+                    {generationError && (
+                      <Error className="max-h-24 mt-4 overflow-auto">
+                        Failed to generate keys: {generationError}
+                      </Error>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <></>
-            )}
+              ) : (
+                <div>
+                  <div className="gap-2 grid grid-cols-4 items-center">
+                    <div>Vote Key</div>
+                    <CopySnippet className="col-span-3">
+                      {account.nodeParticipation.voteKey}
+                    </CopySnippet>
+                    <div>Selection Key</div>
+                    <CopySnippet className="col-span-3">
+                      {account.nodeParticipation.selectionKey}
+                    </CopySnippet>
+                    <div>State Proof Key</div>
+                    <CopySnippet className="col-span-3">
+                      {account.nodeParticipation.stateProofKey}
+                    </CopySnippet>
+                  </div>
+                  <div className="gap-2 grid grid-cols-3 items-center mt-2">
+                    <StatNumber
+                      label="Vote First Round"
+                      small
+                      stat={formatNumber(account.nodeParticipation.voteFirst!)}
+                    />
+                    <StatNumber
+                      label="Vote Last Round"
+                      small
+                      stat={formatNumber(account.nodeParticipation.voteLast!)}
+                    />
+                    <StatNumber
+                      label="Vote Key Dilution"
+                      small
+                      stat={formatNumber(
+                        account.nodeParticipation.voteKeyDilution!,
+                      )}
+                    />
+                  </div>
+                  {!sameKeys && participating ? (
+                    <div className="mt-4 text-amber-600 text-xs dark:text-yellow-500">
+                      This account is participating with different keys than the
+                      ones shown here.
+                    </div>
+                  ) : (
+                    keysExpiringSoon && (
+                      <div className="flex items-center mt-4">
+                        <Button onClick={generateKeys}>Renew Keys</Button>
+                        <div className="ml-4 text-amber-600 text-xs dark:text-yellow-500">
+                          Renew your keys to continue participating.
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex items-center">
-            {participating ? (
-              <Button disabled={!accountConnected} onClick={() => {}}>
-                Go Offline
+            {hasKeys && (!participating || !sameKeys) ? (
+              <Button
+                className="!bg-green-600 !hover:bg-green-500"
+                disabled={!accountConnected}
+                onClick={() => {}}
+              >
+                {!participating ? 'Go Online' : 'Update Keys'}
               </Button>
-            ) : hasKeys ? (
-              <Button disabled={!accountConnected} onClick={() => {}}>
-                Go Online
-              </Button>
-            ) : null}
+            ) : (
+              participating && (
+                <Button disabled={!accountConnected} onClick={() => {}}>
+                  Go Offline
+                </Button>
+              )
+            )}
             {(participating || hasKeys) && !accountConnected && (
-              <div className="ml-4 text-amber-600 dark:text-yellow-500">
+              <div className="ml-4 text-amber-600 text-xs dark:text-yellow-500">
                 Connect your account to issue transactions.
               </div>
             )}
           </div>
-        </div>
+        </>
       )}
     </div>
   );

@@ -309,6 +309,7 @@ store.register('wizard/checkNodeSynced', () => {
         'X-Algo-API-Token',
       );
       nodeAdded = true;
+      flux.dispatch('node/ready');
     });
   }
 

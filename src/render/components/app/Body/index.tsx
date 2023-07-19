@@ -23,7 +23,6 @@ export default function Body() {
   // when the component first loads, load config and start going through the steps
   useEffect(() => void flux.dispatch('wizard/loadConfig'), []);
   useEffect(() => void flux.dispatch('wizard/checkDocker'), []);
-  useEffect(() => void flux.dispatch('accounts/load'), []);
 
   const anyParticipating = flux.accounts.useState('anyParticipating');
 

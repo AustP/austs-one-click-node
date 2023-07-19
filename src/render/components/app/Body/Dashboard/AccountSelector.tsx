@@ -16,10 +16,12 @@ let fetchedAccounts: Record<string, boolean> = {};
 
 export default function AccountSelector({
   className = '',
+  disabled = false,
   selectedAccount,
   setSelectedAccount,
 }: {
   className?: string;
+  disabled?: boolean;
   selectedAccount: string;
   setSelectedAccount: (account: string) => void;
 }) {
@@ -206,7 +208,11 @@ export default function AccountSelector({
         </div>
       )}
     >
-      <Button className={className} onClick={() => setOpen(true)}>
+      <Button
+        className={className}
+        disabled={disabled}
+        onClick={() => setOpen(true)}
+      >
         <div className="flex items-center">
           <WalletIcon className="h-5 mr-2 w-5" />
           <div>

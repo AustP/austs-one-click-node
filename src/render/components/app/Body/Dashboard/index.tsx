@@ -59,7 +59,7 @@ export default function Dashboard() {
   }, [accounts, lastBlock]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-128px)] grow">
+    <div className="flex flex-col h-[calc(100vh-128px)] w-[calc(67vw-72px)]">
       <div className="grid grid-cols-3 grid-rows-2">
         <StatNumber label="Current Block" stat={formatNumber(lastBlock)} />
         <StatNumber
@@ -75,7 +75,6 @@ export default function Dashboard() {
         <AntennaIcon className="h-16 place-self-center text-slate-200 dark:text-slate-800 w-16" />
       </div>
       <AccountViewer
-        accounts={accounts}
         lastBlock={lastBlock}
         selectedAccount={selectedAccount}
         setSelectedAccount={setSelectedAccount}
