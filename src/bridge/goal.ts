@@ -1,5 +1,6 @@
-import { exec } from 'child_process';
-import { BrowserWindow, ipcMain } from 'electron';
+import { exec, spawn } from 'child_process';
+import { app, BrowserWindow, ipcMain } from 'electron';
+import path from 'path';
 
 import { DOCKER_NAME } from './docker';
 
@@ -7,6 +8,50 @@ const catchpointEndpoints = {
   'algorand.mainnet':
     'https://algorand-catchpoints.s3.us-east-2.amazonaws.com/channel/mainnet/latest.catchpoint',
 };
+
+ipcMain.on('goal.addpartkey', (_, { account, firstValid, lastValid }) => {
+  let cwd = app.isPackaged ? path.join(__dirname, '..', '..', '..') : __dirname;
+  const child = spawn(
+    'docker',
+    [
+      'exec',
+      DOCKER_NAME,
+      'goal',
+      'account',
+      'addpartkey',
+      '-a',
+      account,
+      '--roundFirstValid',
+      firstValid,
+      '--roundLastValid',
+      lastValid,
+    ],
+    {
+      cwd,
+    },
+  );
+
+  child.stderr.on('data', (data: Uint8Array) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send(
+      'goal.addpartkey.stderr',
+      String.fromCharCode.apply(null, data),
+    ),
+  );
+  child.stdout.on('data', (data: Uint8Array) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send(
+      'goal.addpartkey.stdout',
+      null,
+      String.fromCharCode.apply(null, data),
+    ),
+  );
+
+  child.on('exit', (code) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send(
+      'goal.addpartkey',
+      code ? true : null,
+    ),
+  );
+});
 
 ipcMain.on('goal.catchpoint', (_, { network }) => {
   // we go through docker because we know our container has curl available
@@ -29,6 +74,18 @@ ipcMain.on('goal.catchup', (_, { catchpoint }) => {
     (err, stdout) =>
       BrowserWindow.getAllWindows()[0]?.webContents.send(
         'goal.catchup',
+        err,
+        stdout,
+      ),
+  );
+});
+
+ipcMain.on('goal.deletepartkey', (_, { id }) => {
+  exec(
+    `docker exec ${DOCKER_NAME} goal account deletepartkey --partkeyid ${id}`,
+    (err, stdout) =>
+      BrowserWindow.getAllWindows()[0]?.webContents.send(
+        'goal.deletepartkey',
         err,
         stdout,
       ),

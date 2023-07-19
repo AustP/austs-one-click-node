@@ -6,10 +6,11 @@ import { produce } from 'immer';
 const VOTE_SAVE_INTERVAL = 60_000; // 30 seconds
 
 type ParticipationDetails = {
-  selectionKey?: Uint8Array;
-  stateProofKey?: Uint8Array;
+  id?: string;
+  selectionKey?: string;
+  stateProofKey?: string;
   voteFirst?: number;
-  voteKey?: Uint8Array;
+  voteKey?: string;
   voteKeyDilution?: number;
   voteLast?: number;
 };
@@ -46,16 +47,59 @@ declare global {
   }
 }
 
-function b64ToUint8Array(b64: string): Uint8Array {
-  return new Uint8Array(Buffer.from(b64, 'base64'));
-}
-
 const store = flux.addStore('accounts', {
   accounts: {},
 }) as any as Store<AccountsStoreState>;
 
+store.register('node/ready', () => void flux.dispatch('accounts/load'));
+
 store.register('accounts/load', async () => {
-  const accounts = await window.store.get('accounts', {});
+  const accounts = (await window.store.get('accounts', {})) as Record<
+    string,
+    Account
+  >;
+
+  // reset node participation so we can always use the latest information
+  for (const address of Object.keys(accounts)) {
+    accounts[address].nodeParticipation = {};
+  }
+
+  // figure out what the last round was
+  const status = await nodeRequest(`/v2/status/`);
+  const lastRound = status['last-round'];
+
+  // figure out which keys are stored on this node
+  const nodeKeys = (await nodeRequest('/v2/participation')) || [];
+  for (const nodeKey of nodeKeys) {
+    // delete any key that is expired
+    if (nodeKey.key['vote-last-valid'] < lastRound) {
+      await window.goal.deletepartkey(nodeKey.id);
+      continue;
+    }
+
+    // make sure we display the latest key
+    if (
+      accounts[nodeKey.address] &&
+      (accounts[nodeKey.address].nodeParticipation.voteLast || 0) <
+        nodeKey.key['vote-last-valid']
+    ) {
+      accounts[nodeKey.address].nodeParticipation = {
+        id: nodeKey.id,
+        selectionKey: nodeKey.key['selection-participation-key'],
+        stateProofKey: nodeKey.key['state-proof-key'],
+        voteFirst: nodeKey.key['vote-first-valid'],
+        voteKey: nodeKey.key['vote-participation-key'],
+        voteKeyDilution: nodeKey.key['vote-key-dilution'],
+        voteLast: nodeKey.key['vote-last-valid'],
+      };
+
+      accounts[nodeKey.address].stats.lastProposedBlock = Math.max(
+        nodeKey['last-block-proposal'] || 0,
+        accounts[nodeKey.address].stats.lastProposedBlock,
+      );
+    }
+  }
+
   return (state) =>
     produce(state, (draft) => {
       draft.accounts = accounts;
@@ -65,32 +109,48 @@ store.register('accounts/load', async () => {
 store.register('accounts/add', async (_, address: string) => {
   try {
     const response = await nodeRequest(`/v2/accounts/${address}`);
+    const chainKey = response.participation;
+
+    const nodeKeys = (await nodeRequest('/v2/participation')) || [];
+    const nodeKey = nodeKeys
+      .filter((k: any) => k.address === address)
+      .reduce((nodeKey: any, currentKey: any) => {
+        if (
+          !nodeKey ||
+          nodeKey.key['vote-last-valid'] < currentKey.key['vote-last-valid']
+        ) {
+          return currentKey;
+        }
+
+        return nodeKey;
+      }, null);
+
     return (state) =>
       produce(state, (draft) => {
         draft.accounts[address] = {
           address,
           algoAmount: response.amount,
-          chainParticipation: {
-            selectionKey: response.participation?.[
-              'selection-participation-key'
-            ]
-              ? b64ToUint8Array(
-                  response.participation['selection-participation-key'],
-                )
-              : undefined,
-            stateProofKey: response.participation?.['state-proof-key']
-              ? b64ToUint8Array(response.participation['state-proof-key'])
-              : undefined,
-            voteFirst: response.participation?.['vote-first-valid'],
-            voteKey: response.participation?.['vote-participation-key']
-              ? b64ToUint8Array(
-                  response.participation['vote-participation-key'],
-                )
-              : undefined,
-            voteKeyDilution: response.participation?.['vote-key-dilution'],
-            voteLast: response.participation?.['vote-last-valid'],
-          },
-          nodeParticipation: state.accounts[address]?.nodeParticipation || {},
+          chainParticipation: chainKey
+            ? {
+                selectionKey: chainKey['selection-participation-key'],
+                stateProofKey: chainKey['state-proof-key'],
+                voteFirst: chainKey['vote-first-valid'],
+                voteKey: chainKey['vote-participation-key'],
+                voteKeyDilution: chainKey['vote-key-dilution'],
+                voteLast: chainKey['vote-last-valid'],
+              }
+            : {},
+          nodeParticipation: nodeKey
+            ? {
+                id: nodeKey.id,
+                selectionKey: nodeKey.key['selection-participation-key'],
+                stateProofKey: nodeKey.key['state-proof-key'],
+                voteFirst: nodeKey.key['vote-first-valid'],
+                voteKey: nodeKey.key['vote-participation-key'],
+                voteKeyDilution: nodeKey.key['vote-key-dilution'],
+                voteLast: nodeKey.key['vote-last-valid'],
+              }
+            : {},
           pk: algosdk.decodeAddress(address).publicKey,
           stats: {
             lastProposedBlock:

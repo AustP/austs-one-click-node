@@ -1926,7 +1926,7 @@ algosdk@1.24.0:
 
 "algoseas-libs@git+https://oauth2:5M-yAwqQJ_U-R-d7Pp9x@gitlab.probsttech.com/algoseas/libs.git":
   version "1.0.1"
-  resolved "git+https://oauth2:5M-yAwqQJ_U-R-d7Pp9x@gitlab.probsttech.com/algoseas/libs.git#26004fb4bc8b078b2b028eaf3762a3a2c750dd4b"
+  resolved "git+https://oauth2:5M-yAwqQJ_U-R-d7Pp9x@gitlab.probsttech.com/algoseas/libs.git#e6a5ea17bd31d59c04a253634533ff046274fb63"
   dependencies:
     "@blockshake/defly-connect" "^1.1.5"
     "@json-rpc-tools/utils" "^1.7.6"
