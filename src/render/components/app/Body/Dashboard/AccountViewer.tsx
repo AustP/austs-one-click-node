@@ -1,5 +1,6 @@
 import flux from '@aust/react-flux';
 import { useWallet } from '@txnlab/use-wallet';
+import { TransactionGroup } from 'algoseas-libs/build/algo';
 import Dropdown from 'algoseas-libs/build/react/Dropdown';
 import { useCallback, useState } from 'react';
 
@@ -16,8 +17,8 @@ import AccountSelector from './AccountSelector';
 import StatNumber from './StatNumber';
 
 const EXPIRING_KEYS_THRESHOLD = 268800; // about two week's worth of blocks
-// const PARTICIPATION_PERIOD = 3000000; // about 3 months worth of blocks
-const PARTICIPATION_PERIOD = 300000;
+const PARTICIPATION_PERIOD = 3000000; // about 3 months worth of blocks
+const SIGNING_TIMEOUT = 15000;
 
 export default function AccountViewer({
   className = '',
@@ -30,9 +31,13 @@ export default function AccountViewer({
   selectedAccount: string;
   setSelectedAccount: (account: string) => void;
 }) {
-  const { connectedAccounts } = useWallet();
+  const { connectedAccounts, signTransactions } = useWallet();
   const [generatingKeys, setGeneratingKeys] = useState(false);
   const [generationError, setGenerationError] = useState('');
+  const [waitingFor, setWaitingFor] = useState<'' | 'signature' | 'submission'>(
+    '',
+  );
+  const [submissionError, setSubmissionError] = useState('');
 
   const account = flux.accounts.selectState('get', selectedAccount);
   const hasKeys = account?.nodeParticipation.selectionKey !== undefined;
@@ -69,6 +74,40 @@ export default function AccountViewer({
 
     setGeneratingKeys(false);
   }, [lastBlock, selectedAccount]);
+
+  const signAndSubmit = useCallback(
+    async (group: TransactionGroup) => {
+      try {
+        setWaitingFor('signature');
+        await group.makeTxns();
+
+        const txns = await Promise.race([
+          signTransactions(group.toUint8Array(), undefined, false),
+          new Promise((_, reject) =>
+            setTimeout(() => reject('Signing timed out.'), SIGNING_TIMEOUT),
+          ) as Promise<never>,
+        ]);
+        group.storeSignatures(txns);
+
+        setWaitingFor('submission');
+
+        await Promise.race([
+          group.submit(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject('Submission timed out.'), SIGNING_TIMEOUT),
+          ) as Promise<never>,
+        ]);
+
+        // re-load the account to get the new key information
+        flux.dispatch('accounts/add', selectedAccount);
+      } catch (err) {
+        setSubmissionError(err.toString());
+      }
+
+      setWaitingFor('');
+    },
+    [selectedAccount, signTransactions],
+  );
 
   return (
     <div
@@ -296,16 +335,67 @@ export default function AccountViewer({
           <div className="flex items-center">
             {hasKeys && (!participating || !sameKeys) ? (
               <Button
-                className="!bg-green-600 !hover:bg-green-500"
-                disabled={!accountConnected}
-                onClick={() => {}}
+                className="!bg-green-600 !hover:bg-green-500 flex gap-4 items-center whitespace-nowrap"
+                disabled={!accountConnected || waitingFor !== ''}
+                onClick={async () => {
+                  const group = new TransactionGroup({
+                    description:
+                      'This transaction will register your account online.',
+                    name: 'Go Online',
+                  });
+
+                  group.addOnlineKeyReg(
+                    {
+                      from: selectedAccount,
+                      selectionKey: account.nodeParticipation.selectionKey!,
+                      stateProofKey: account.nodeParticipation.stateProofKey!,
+                      voteFirst: account.nodeParticipation.voteFirst!,
+                      voteKey: account.nodeParticipation.voteKey!,
+                      voteKeyDilution:
+                        account.nodeParticipation.voteKeyDilution!,
+                      voteLast: account.nodeParticipation.voteLast!,
+                    },
+                    'Registration Transaction',
+                  );
+
+                  signAndSubmit(group);
+                }}
               >
-                {!participating ? 'Go Online' : 'Update Keys'}
+                {waitingFor !== '' && <Spinner className="!h-6 !w-6" />}
+                {waitingFor === 'signature'
+                  ? 'Waiting for signature...'
+                  : waitingFor === 'submission'
+                  ? 'Submitting...'
+                  : !participating
+                  ? 'Go Online'
+                  : 'Update Keys'}
               </Button>
             ) : (
               participating && (
-                <Button disabled={!accountConnected} onClick={() => {}}>
-                  Go Offline
+                <Button
+                  className="flex gap-4 items-center whitespace-nowrap"
+                  disabled={!accountConnected || waitingFor !== ''}
+                  onClick={() => {
+                    const group = new TransactionGroup({
+                      description:
+                        'This transaction will register your account offline.',
+                      name: 'Go Offline',
+                    });
+
+                    group.addOfflineKeyReg(
+                      { from: selectedAccount },
+                      'Registration Transaction',
+                    );
+
+                    signAndSubmit(group);
+                  }}
+                >
+                  {waitingFor !== '' && <Spinner className="!h-6 !w-6" />}
+                  {waitingFor === 'signature'
+                    ? 'Waiting for signature...'
+                    : waitingFor === 'submission'
+                    ? 'Submitting...'
+                    : 'Go Offline'}
                 </Button>
               )
             )}
@@ -313,6 +403,19 @@ export default function AccountViewer({
               <div className="ml-4 text-amber-600 text-xs dark:text-yellow-500">
                 Connect your account to issue transactions.
               </div>
+            )}
+            {submissionError ? (
+              <Error className="grow max-h-12 ml-4 overflow-y-auto !px-3 !py-2">
+                {submissionError}
+              </Error>
+            ) : (
+              hasKeys &&
+              accountConnected && (
+                <div className="ml-4 text-slate-500 text-xs">
+                  It takes 320 rounds to go online and offline. Plan
+                  accordingly.
+                </div>
+              )
             )}
           </div>
         </>
