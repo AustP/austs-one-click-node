@@ -106,69 +106,74 @@ store.register('accounts/load', async () => {
     });
 });
 
-store.register('accounts/add', async (_, address: string) => {
-  try {
-    const response = await nodeRequest(`/v2/accounts/${address}`);
-    const chainKey = response.participation;
+store.register(
+  'accounts/add',
+  async (_, address: string, shouldSave = true) => {
+    try {
+      const response = await nodeRequest(`/v2/accounts/${address}`);
+      const chainKey = response.participation;
 
-    const nodeKeys = (await nodeRequest('/v2/participation')) || [];
-    const nodeKey = nodeKeys
-      .filter((k: any) => k.address === address)
-      .reduce((nodeKey: any, currentKey: any) => {
-        if (
-          !nodeKey ||
-          nodeKey.key['vote-last-valid'] < currentKey.key['vote-last-valid']
-        ) {
-          return currentKey;
-        }
+      const nodeKeys = (await nodeRequest('/v2/participation')) || [];
+      const nodeKey = nodeKeys
+        .filter((k: any) => k.address === address)
+        .reduce((nodeKey: any, currentKey: any) => {
+          if (
+            !nodeKey ||
+            nodeKey.key['vote-last-valid'] < currentKey.key['vote-last-valid']
+          ) {
+            return currentKey;
+          }
 
-        return nodeKey;
-      }, null);
+          return nodeKey;
+        }, null);
 
-    return (state) =>
-      produce(state, (draft) => {
-        draft.accounts[address] = {
-          address,
-          algoAmount: response.amount,
-          chainParticipation: chainKey
-            ? {
-                selectionKey: chainKey['selection-participation-key'],
-                stateProofKey: chainKey['state-proof-key'],
-                voteFirst: chainKey['vote-first-valid'],
-                voteKey: chainKey['vote-participation-key'],
-                voteKeyDilution: chainKey['vote-key-dilution'],
-                voteLast: chainKey['vote-last-valid'],
-              }
-            : {},
-          nodeParticipation: nodeKey
-            ? {
-                id: nodeKey.id,
-                selectionKey: nodeKey.key['selection-participation-key'],
-                stateProofKey: nodeKey.key['state-proof-key'],
-                voteFirst: nodeKey.key['vote-first-valid'],
-                voteKey: nodeKey.key['vote-participation-key'],
-                voteKeyDilution: nodeKey.key['vote-key-dilution'],
-                voteLast: nodeKey.key['vote-last-valid'],
-              }
-            : {},
-          pk: algosdk.decodeAddress(address).publicKey,
-          stats: {
-            lastProposedBlock:
-              state.accounts[address]?.stats.lastProposedBlock || 0,
-            proposals: state.accounts[address]?.stats.proposals || 0,
-            votes: state.accounts[address]?.stats.votes || 0,
-          },
-        };
+      return (state) =>
+        produce(state, (draft) => {
+          draft.accounts[address] = {
+            address,
+            algoAmount: response.amount,
+            chainParticipation: chainKey
+              ? {
+                  selectionKey: chainKey['selection-participation-key'],
+                  stateProofKey: chainKey['state-proof-key'],
+                  voteFirst: chainKey['vote-first-valid'],
+                  voteKey: chainKey['vote-participation-key'],
+                  voteKeyDilution: chainKey['vote-key-dilution'],
+                  voteLast: chainKey['vote-last-valid'],
+                }
+              : {},
+            nodeParticipation: nodeKey
+              ? {
+                  id: nodeKey.id,
+                  selectionKey: nodeKey.key['selection-participation-key'],
+                  stateProofKey: nodeKey.key['state-proof-key'],
+                  voteFirst: nodeKey.key['vote-first-valid'],
+                  voteKey: nodeKey.key['vote-participation-key'],
+                  voteKeyDilution: nodeKey.key['vote-key-dilution'],
+                  voteLast: nodeKey.key['vote-last-valid'],
+                }
+              : {},
+            pk: algosdk.decodeAddress(address).publicKey,
+            stats: {
+              lastProposedBlock:
+                state.accounts[address]?.stats.lastProposedBlock || 0,
+              proposals: state.accounts[address]?.stats.proposals || 0,
+              votes: state.accounts[address]?.stats.votes || 0,
+            },
+          };
 
-        flux.dispatch('accounts/save');
-      });
-  } catch (err) {
-    flux.dispatch(
-      'notices/error',
-      `Failed to fetch account: ${err.message}\n${err.toString()}`,
-    );
-  }
-});
+          if (shouldSave) {
+            flux.dispatch('accounts/save');
+          }
+        });
+    } catch (err) {
+      flux.dispatch(
+        'notices/error',
+        `Failed to fetch account: ${err.message}\n${err.toString()}`,
+      );
+    }
+  },
+);
 
 store.register(
   'accounts/remove',

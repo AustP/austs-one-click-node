@@ -9,6 +9,9 @@ import { abbreviateNumber, formatNumber } from '@/render/utils';
 import AccountViewer from './AccountViewer';
 import StatNumber from './StatNumber';
 
+const HEALTH_INTERVAL = 15000; // if we haven't seen a block for 15 seconds, do a health check
+const PARTICIPATION_INTERVAL = 10; // every 10 blocks we will check for participation
+
 export default function Dashboard() {
   const [lastBlock, setLastBlock] = useState(0);
   const [selectedAccount, setSelectedAccount] = useState('');
@@ -22,9 +25,16 @@ export default function Dashboard() {
     let shouldUpdate = true;
 
     (async () => {
+      let timeout = setTimeout(
+        () => flux.dispatch('wizard/checkContainerRunning'),
+        HEALTH_INTERVAL,
+      );
+
       const status = await nodeRequest(
         `/v2/status/wait-for-block-after/${lastBlock}`,
       );
+      clearTimeout(timeout);
+
       const lastRound = status['last-round'];
       const response = await nodeRequest(
         `/v2/blocks/${lastRound}?format=msgpack`,
@@ -49,6 +59,17 @@ export default function Dashboard() {
               break;
             }
           }
+        }
+
+        // every 10 blocks, check all of our accounts for participation
+        if (lastBlock % PARTICIPATION_INTERVAL === 0) {
+          let promises = [];
+          for (const account of accounts) {
+            promises.push(flux.dispatch('accounts/add', account, false));
+          }
+
+          await Promise.all(promises);
+          flux.dispatch('accounts/save');
         }
 
         setLastBlock(lastRound);
