@@ -180,6 +180,12 @@ store.register(
       draft.buffers = { stderr: [], stdout: [] };
       draft.currentStep = Step.Check_Container_Running;
       draft.stepStatus[Step.Check_Container_Running] = Status.Pending;
+      draft.stepStatus[Step.Container_Starting] = Status.Failure;
+      draft.stepStatus[Step.Check_Node_Running] = Status.Failure;
+      draft.stepStatus[Step.Node_Starting] = Status.Failure;
+      draft.stepStatus[Step.Check_Node_Synced] = Status.Failure;
+      draft.stepStatus[Step.Node_Syncing] = Status.Failure;
+      draft.stepStatus[Step.Dashboard] = Status.Failure;
       flux.dispatch('wizard/checkContainerRunning/results');
     }),
 );
