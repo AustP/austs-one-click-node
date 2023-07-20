@@ -92,11 +92,6 @@ store.register('accounts/load', async () => {
         voteKeyDilution: nodeKey.key['vote-key-dilution'],
         voteLast: nodeKey.key['vote-last-valid'],
       };
-
-      accounts[nodeKey.address].stats.lastProposedBlock = Math.max(
-        nodeKey['last-block-proposal'] || 0,
-        accounts[nodeKey.address].stats.lastProposedBlock,
-      );
     }
   }
 
