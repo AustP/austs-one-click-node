@@ -27,12 +27,6 @@ export default function AccountSelector({
 }) {
   const accounts = flux.accounts.useState('list');
 
-  useEffect(() => {
-    if (!selectedAccount && accounts.length > 0) {
-      setSelectedAccount(accounts[0]);
-    }
-  }, [accounts, selectedAccount]);
-
   const { providers, connectedAccounts } = useWallet();
 
   useEffect(() => {
@@ -59,10 +53,20 @@ export default function AccountSelector({
     setNewAccount('');
   }, []);
 
-  const setSelectedAccountAndClose = useCallback((account: string) => {
-    setSelectedAccount(account);
-    close();
-  }, []);
+  const setSelectedAccountAndClose = useCallback(
+    (account: string) => {
+      for (const provider of providers || []) {
+        if (provider.accounts.find((a) => a.address === account)) {
+          provider.setActiveAccount(account);
+          break;
+        }
+      }
+
+      setSelectedAccount(account);
+      close();
+    },
+    [providers],
+  );
 
   const [isAdding, setIsAdding] = useState(false);
   const [newAccount, setNewAccount] = useState('');
@@ -75,6 +79,12 @@ export default function AccountSelector({
 
     setSelectedAccountAndClose(newAccount);
   }, [newAccount]);
+
+  useEffect(() => {
+    if (!selectedAccount && accounts.length > 0) {
+      setSelectedAccountAndClose(accounts[0]);
+    }
+  }, [accounts, selectedAccount]);
 
   return (
     <Dropdown
@@ -154,7 +164,9 @@ export default function AccountSelector({
               .filter((account) => !connectedAccountsList.includes(account))
               .map((account) => (
                 <div
-                  className="hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer flex items-center group px-4 py-1"
+                  className={`hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer flex items-center group px-4 py-1 ${
+                    account === selectedAccount ? '' : 'text-slate-500'
+                  }`}
                   key={account}
                   onClick={() => setSelectedAccountAndClose(account)}
                 >
