@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import Button from '@components/shared/Button';
 import CheckIcon from '@components/icons/Check';
+import TextInput from '@components/shared/TextInput';
 import WalletIcon from '@components/icons/Wallet';
 
 // include the string 'hidden' so tailwind will not purge this class
@@ -98,7 +99,7 @@ export default function AccountSelector({
               key={provider.metadata.name}
             >
               <div className="flex justify-between items-center px-4 py-2">
-                <div className="flex font-bold items-center text-base">
+                <div className="flex font-medium items-center text-base">
                   <img
                     alt={`${provider.metadata.name} icon`}
                     className="h-8 mr-2 rounded-full w-8"
@@ -150,7 +151,7 @@ export default function AccountSelector({
           ))}
           <div className="py-2">
             <div className="flex justify-between items-center px-4 py-2">
-              <div className="flex font-bold items-center text-base">
+              <div className="flex font-medium items-center text-base">
                 <div className="bg-slate-600 flex h-8 items-center justify-center mr-2 rounded-full text-slate-100 text-sm w-8">
                   <div>D</div>
                 </div>
@@ -191,13 +192,13 @@ export default function AccountSelector({
               ))}
             {isAdding && (
               <div className="flex items-center px-4 py-1">
-                <input
-                  className={`bg-transparent border ${
-                    newAccountIsValid && newAccount.length > 0
-                      ? 'border-slate-500'
-                      : 'border-red-500'
-                  } grow px-2 py-1 rounded-md`}
-                  onChange={(e) => setNewAccount(e.target.value)}
+                <TextInput
+                  className={`${
+                    !newAccountIsValid && newAccount.length > 0
+                      ? '[&_input]:!border-red-500'
+                      : ''
+                  } grow`}
+                  onChange={setNewAccount}
                   onKeyUp={(e) => {
                     if (e.key === 'Enter' && newAccountIsValid) {
                       addNewAccount();
