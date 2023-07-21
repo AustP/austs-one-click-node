@@ -23,8 +23,8 @@ const createStore = () => {
     configName: 'config',
   });
 
-  store.set('port', DEFAULT_PORT);
-  store.set('startup', false);
+  store.set('port', store.get('port', DEFAULT_PORT));
+  store.set('startup', store.get('startup', false));
 };
 
 const createWindow = () => {
