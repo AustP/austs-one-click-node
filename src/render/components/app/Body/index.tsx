@@ -9,9 +9,9 @@ import { useEffect, useState } from 'react';
 
 import Button from '@components/shared/Button';
 import GearIcon from '@components/icons/Gear';
+import UndoIcon from '@components/icons/Undo';
 import Spinner from '@components/shared/Spinner';
 import { Status, Step } from '@/render/flux/wizardStore';
-import XIcon from '@components/icons/X';
 
 import Column from './Column';
 import Dashboard from './Dashboard';
@@ -182,7 +182,7 @@ export default function Body() {
             >
               {step === Step.Settings &&
               stepStatus[Step.Settings] !== Status.Pending ? (
-                <XIcon className="h-5 w-5" />
+                <UndoIcon className="h-5 w-5" />
               ) : (
                 <GearIcon className="h-5 w-5" />
               )}
