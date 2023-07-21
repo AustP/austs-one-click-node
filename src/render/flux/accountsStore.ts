@@ -69,7 +69,11 @@ store.register('accounts/load', async () => {
   const lastRound = status['last-round'];
 
   // figure out which keys are stored on this node
-  const nodeKeys = (await nodeRequest('/v2/participation')) || [];
+  let nodeKeys = await nodeRequest('/v2/participation');
+  if (!Array.isArray(nodeKeys)) {
+    nodeKeys = [];
+  }
+
   for (const nodeKey of nodeKeys) {
     // delete any key that is expired
     if (nodeKey.key['vote-last-valid'] < lastRound) {
@@ -108,7 +112,11 @@ store.register(
       const response = await nodeRequest(`/v2/accounts/${address}`);
       const chainKey = response.participation;
 
-      const nodeKeys = (await nodeRequest('/v2/participation')) || [];
+      let nodeKeys = await nodeRequest('/v2/participation');
+      if (!Array.isArray(nodeKeys)) {
+        nodeKeys = [];
+      }
+
       const nodeKey = nodeKeys
         .filter((k: any) => k.address === address)
         .reduce((nodeKey: any, currentKey: any) => {
