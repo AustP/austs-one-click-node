@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
 import isDev from 'electron-is-dev';
 import Store from 'electron-persist-secure/lib/store';
+import path from 'path';
 
 const DEFAULT_PORT = 4160;
 
@@ -23,6 +24,7 @@ const createStore = () => {
   });
 
   store.set('port', DEFAULT_PORT);
+  store.set('startup', false);
 };
 
 const createWindow = () => {
@@ -47,18 +49,12 @@ const createWindow = () => {
   mainWindow.removeMenu();
   mainWindow.setWindowButtonVisibility?.(false);
 
-  setupCSP();
-};
-
-const setupCSP = () => {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          `connect-src 'self' data: http://localhost:${store.get(
-            'port',
-          )} https://static.defly.app wss://*.walletconnect.org wss://*.defly.app; font-src 'self' https://fonts.gstatic.com; object-src 'none'; script-src 'self'; style-src 'unsafe-inline' https://fonts.googleapis.com`,
+          `connect-src 'self' data: http://localhost:* https://*.defly.app wss://*.walletconnect.org wss://*.defly.app; font-src 'self' https://fonts.gstatic.com; object-src 'none'; script-src 'self'; style-src 'unsafe-inline' https://fonts.googleapis.com`,
         ],
       },
     });
@@ -139,6 +135,11 @@ ipcMain.on('platform', () => {
   );
 });
 
+ipcMain.on('refresh', () => {
+  createWindow();
+  BrowserWindow.getAllWindows()[0]?.close();
+});
+
 ipcMain.on('quit', () => {
   // close all the windows
   BrowserWindow.getAllWindows().forEach((window) => window.close());
@@ -146,8 +147,22 @@ ipcMain.on('quit', () => {
 
 ipcMain.on('setPort', (_, { port }) => {
   store.set('port', port);
-  setupCSP();
   BrowserWindow.getAllWindows()[0]?.webContents.send('setPort');
+});
+
+ipcMain.on('setStartup', (_, { startup }) => {
+  const appFolder = path.dirname(process.execPath);
+  const updateExe = path.resolve(appFolder, '..', 'Update.exe');
+  const exeName = path.basename(process.execPath);
+
+  app.setLoginItemSettings({
+    args: ['--processStart', `"${exeName}"`],
+    openAtLogin: startup,
+    path: updateExe,
+  });
+
+  store.set('startup', startup);
+  BrowserWindow.getAllWindows()[0]?.webContents.send('setStartup');
 });
 
 ipcMain.on('unmaximize', () => {

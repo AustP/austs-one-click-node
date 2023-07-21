@@ -75,8 +75,10 @@ const electron = {
   maximized: () => sendIPC('maximized'),
   minimize: () => sendIPC('minimize'),
   platform: () => sendIPC('platform'),
+  refresh: () => sendIPC('refresh'),
   quit: () => sendIPC('quit'),
   setPort: (port: number) => sendIPC('setPort', { port }),
+  setStartup: (startup: boolean) => sendIPC('setStartup', { startup }),
   unmaximize: () => sendIPC('unmaximize'),
 };
 

@@ -247,6 +247,7 @@ export default function StepViewer({
       }
 
     // dashboard is it's own component
+    // settings is it's own component
   }
 
   return null;

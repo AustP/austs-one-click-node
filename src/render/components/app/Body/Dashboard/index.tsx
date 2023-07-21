@@ -4,6 +4,7 @@ import { nodeRequest } from 'algoseas-libs/build/algo';
 import { useEffect, useState } from 'react';
 
 import AntennaIcon from '@components/icons/Antenna';
+import { Step } from '@/render/flux/wizardStore';
 import { abbreviateNumber, formatNumber } from '@/render/utils';
 
 import AccountViewer from './AccountViewer';
@@ -25,54 +26,61 @@ export default function Dashboard() {
     let shouldUpdate = true;
 
     (async () => {
-      let timeout = setTimeout(
-        () => flux.dispatch('wizard/checkContainerRunning'),
-        HEALTH_INTERVAL,
-      );
-
-      const status = await nodeRequest(
-        `/v2/status/wait-for-block-after/${lastBlock}`,
-      );
-      clearTimeout(timeout);
-
-      const lastRound = status['last-round'];
-      const response = await nodeRequest(
-        `/v2/blocks/${lastRound}?format=msgpack`,
-      );
-
-      if (shouldUpdate) {
-        const proposer = algosdk.encodeAddress(response.cert.prop.oprop);
-        // check if any of our accounts were the proposer
-        for (const account of accounts) {
-          if (account === proposer) {
-            flux.dispatch('accounts/stats/addProposal', account, lastRound);
-            break;
-          }
+      let timeout = setTimeout(() => {
+        if (flux.wizard.selectState('step') === Step.Dashboard) {
+          flux.dispatch('wizard/checkContainerRunning');
         }
+      }, HEALTH_INTERVAL);
 
-        for (const vote of response.cert.vote) {
-          const voter = algosdk.encodeAddress(vote.snd);
-          // check if any of our accounts were voters
+      try {
+        const status = await nodeRequest(
+          `/v2/status/wait-for-block-after/${lastBlock}`,
+          { maxRetries: 0 },
+        );
+        clearTimeout(timeout);
+
+        const lastRound = status['last-round'];
+        const response = await nodeRequest(
+          `/v2/blocks/${lastRound}?format=msgpack`,
+        );
+
+        if (shouldUpdate) {
+          const proposer = algosdk.encodeAddress(response.cert.prop.oprop);
+          // check if any of our accounts were the proposer
           for (const account of accounts) {
-            if (account === voter) {
-              flux.dispatch('accounts/stats/addVote', account);
+            if (account === proposer) {
+              flux.dispatch('accounts/stats/addProposal', account, lastRound);
               break;
             }
           }
-        }
 
-        // every 10 blocks, check all of our accounts for participation
-        if (lastBlock % PARTICIPATION_INTERVAL === 0) {
-          let promises = [];
-          for (const account of accounts) {
-            promises.push(flux.dispatch('accounts/add', account, false));
+          for (const vote of response.cert.vote) {
+            const voter = algosdk.encodeAddress(vote.snd);
+            // check if any of our accounts were voters
+            for (const account of accounts) {
+              if (account === voter) {
+                flux.dispatch('accounts/stats/addVote', account);
+                break;
+              }
+            }
           }
 
-          await Promise.all(promises);
-          flux.dispatch('accounts/save');
-        }
+          // every 10 blocks, check all of our accounts for participation
+          if (lastBlock % PARTICIPATION_INTERVAL === 0) {
+            let promises = [];
+            for (const account of accounts) {
+              promises.push(flux.dispatch('accounts/add', account, false));
+            }
 
-        setLastBlock(lastRound);
+            await Promise.all(promises);
+            flux.dispatch('accounts/save');
+          }
+
+          setLastBlock(lastRound);
+        }
+      } catch (err) {
+        // any errors means the node is not running
+        // our health check will fix it, so just ignore
       }
     })();
 

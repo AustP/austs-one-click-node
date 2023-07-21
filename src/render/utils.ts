@@ -20,3 +20,20 @@ export function formatNumber(number: number): string {
     return number.toString();
   }
 }
+
+// modified from https://stackoverflow.com/a/45309230/1408717
+export function parseNumber(value: string, defaultValue: number = 0) {
+  if (!value) {
+    return defaultValue;
+  }
+
+  const decimal = Intl.NumberFormat()
+    .formatToParts(1.1)
+    .find((part) => part.type === 'decimal')!.value;
+
+  return parseFloat(
+    value
+      .replace(new RegExp(`[^-+0-9${decimal}]`, 'g'), '')
+      .replace(decimal, '.'),
+  );
+}
