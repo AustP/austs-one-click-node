@@ -23,69 +23,75 @@ export default function Dashboard() {
   const totalVotes = flux.accounts.selectState('totalVotes');
 
   useEffect(() => {
-    let shouldUpdate = true;
+    let terminated = false;
 
-    (async () => {
+    async function fetchBlockAfter(blockNumber: number) {
       let timeout = setTimeout(() => {
-        if (flux.wizard.selectState('step') === Step.Dashboard) {
+        if (flux.wizard.selectState('currentStep') === Step.Dashboard) {
           flux.dispatch('wizard/checkContainerRunning');
         }
       }, HEALTH_INTERVAL);
 
       try {
         const status = await nodeRequest(
-          `/v2/status/wait-for-block-after/${lastBlock}`,
-          { maxRetries: 0 },
+          `/v2/status/wait-for-block-after/${blockNumber}`,
+          { fetchTimeoutMs: HEALTH_INTERVAL, maxRetries: 0 },
         );
         clearTimeout(timeout);
+        if (terminated) {
+          return;
+        }
 
         const lastRound = status['last-round'];
         const response = await nodeRequest(
           `/v2/blocks/${lastRound}?format=msgpack`,
         );
 
-        if (shouldUpdate) {
-          const proposer = algosdk.encodeAddress(response.cert.prop.oprop);
-          // check if any of our accounts were the proposer
+        const accounts = flux.accounts.selectState('list');
+        const proposer = algosdk.encodeAddress(response.cert.prop.oprop);
+        // check if any of our accounts were the proposer
+        for (const account of accounts) {
+          if (account === proposer) {
+            flux.dispatch('accounts/stats/addProposal', account, lastRound);
+            break;
+          }
+        }
+
+        for (const vote of response.cert.vote) {
+          const voter = algosdk.encodeAddress(vote.snd);
+          // check if any of our accounts were voters
           for (const account of accounts) {
-            if (account === proposer) {
-              flux.dispatch('accounts/stats/addProposal', account, lastRound);
+            if (account === voter) {
+              flux.dispatch('accounts/stats/addVote', account);
               break;
             }
           }
-
-          for (const vote of response.cert.vote) {
-            const voter = algosdk.encodeAddress(vote.snd);
-            // check if any of our accounts were voters
-            for (const account of accounts) {
-              if (account === voter) {
-                flux.dispatch('accounts/stats/addVote', account);
-                break;
-              }
-            }
-          }
-
-          // every 10 blocks, check all of our accounts for participation
-          if (lastBlock % PARTICIPATION_INTERVAL === 0) {
-            let promises = [];
-            for (const account of accounts) {
-              promises.push(flux.dispatch('accounts/add', account, false));
-            }
-
-            await Promise.all(promises);
-            flux.dispatch('accounts/save');
-          }
-
-          setLastBlock(lastRound);
         }
+
+        // every 10 blocks, check all of our accounts for participation
+        if (lastRound % PARTICIPATION_INTERVAL === 0) {
+          let promises = [];
+          for (const account of accounts) {
+            promises.push(flux.dispatch('accounts/add', account, false));
+          }
+
+          await Promise.all(promises);
+          flux.dispatch('accounts/save');
+        }
+
+        setLastBlock(lastRound);
+        fetchBlockAfter(lastRound);
       } catch (err) {
         // any errors means the node is not running
         // our health check will fix it, so just ignore
+        console.error(err);
       }
-    })();
+    }
 
-    return () => void (shouldUpdate = false);
-  }, [accounts, lastBlock]);
+    fetchBlockAfter(0);
+
+    return () => void (terminated = true);
+  }, []);
 
   return (
     <div className="flex flex-col h-[calc(100vh-128px)] w-[calc(67vw-72px)]">
