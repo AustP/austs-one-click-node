@@ -17,6 +17,7 @@ export const mainConfig: Configuration = {
   plugins: [
     new CopyWebpackPlugin({
       patterns: [
+        { from: 'src/config.json', to: '.' },
         { from: 'src/Dockerfile', to: '.' },
         { from: 'src/run.sh', to: '.' },
       ],
