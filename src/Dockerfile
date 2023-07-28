@@ -27,3 +27,5 @@
 FROM algorand/algod:latest as build
 
 ENV NETWORK=mainnet
+
+COPY ./config.json /etc/algorand/config.json

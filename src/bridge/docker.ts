@@ -20,11 +20,15 @@ if (!fs.existsSync(dataPath)) {
 }
 
 ipcMain.on('docker.build', () => {
-  // the Dockerfile and run.sh are in the virtual app.asar directory
+  // config.json, Dockerfile, and run.sh are in the virtual app.asar directory
   // since docker will run outside of the electron process, we need to
   // make sure those files are available from the command line
   let cwd = app.isPackaged ? path.join(__dirname, '..', '..', '..') : __dirname;
   if (app.isPackaged) {
+    fs.copyFileSync(
+      path.join(__dirname, 'config.json'),
+      path.join(cwd, 'config.json'),
+    );
     fs.copyFileSync(
       path.join(__dirname, 'Dockerfile'),
       path.join(cwd, 'Dockerfile'),
