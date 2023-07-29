@@ -1,7 +1,7 @@
 {
   "name": "austs-two-click-node",
-  "productName": "AustsTwoClickNode",
-  "version": "0.1.0",
+  "productName": "Aust's Two Click Node",
+  "version": "0.2.0",
   "author": "Aust",
   "description": "An easy to use interface to run an Algorand or Voi consensus node.",
   "main": ".webpack/main",
@@ -42,7 +42,6 @@
     "@vercel/webpack-asset-relocator-loader": "1.7.3",
     "autoprefixer": "^10.4.14",
     "babel-loader": "^9.1.2",
-    "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.0.0",
     "electron": "25.2.0",
     "electron-icon-builder": "^2.0.1",

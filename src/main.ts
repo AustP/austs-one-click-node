@@ -97,7 +97,6 @@ app.on('web-contents-created', (_, contents) => {
 });
 
 // IPC handlers
-import './bridge/docker';
 import './bridge/goal';
 
 ipcMain.on('isDev', () =>
@@ -143,11 +142,6 @@ ipcMain.on('refresh', () => {
 ipcMain.on('quit', () => {
   // close all the windows
   BrowserWindow.getAllWindows().forEach((window) => window.close());
-});
-
-ipcMain.on('setPort', (_, { port }) => {
-  store.set('port', port);
-  BrowserWindow.getAllWindows()[0]?.webContents.send('setPort');
 });
 
 ipcMain.on('setStartup', (_, { startup }) => {
