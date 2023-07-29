@@ -1,4 +1,3 @@
-import CopyWebpackPlugin from 'copy-webpack-plugin';
 import type { Configuration } from 'webpack';
 
 import { rules } from './webpack.rules';
@@ -14,15 +13,7 @@ export const mainConfig: Configuration = {
   module: {
     rules,
   },
-  plugins: [
-    new CopyWebpackPlugin({
-      patterns: [
-        { from: 'src/config.json', to: '.' },
-        { from: 'src/Dockerfile', to: '.' },
-        { from: 'src/run.sh', to: '.' },
-      ],
-    }),
-  ],
+  plugins: [],
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
   },

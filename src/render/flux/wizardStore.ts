@@ -15,12 +15,7 @@ enum CatchUpStatus {
 }
 
 export enum Step {
-  Check_Docker_Installed,
-  Check_Container_Built,
-  Container_Building,
   Settings,
-  Check_Container_Running,
-  Container_Starting,
   Check_Node_Running,
   Node_Starting,
   Check_Node_Synced,
@@ -60,20 +55,20 @@ const store = flux.addStore('wizard', {
     stdout: [],
   },
   catchUpStatus: CatchUpStatus.Unchecked,
-  currentStep: Step.Check_Docker_Installed,
+  currentStep: Step.Check_Node_Running,
   port: 4160,
-  stepStatus: Object.entries(Step).reduce((acc, [, value]) => {
+  stepStatus: Object.entries(Step).reduce((stepStatus, [, value]) => {
     if (typeof value === 'string') {
-      return acc;
+      return stepStatus;
     }
 
-    if (value === Step.Check_Docker_Installed) {
-      acc[value] = Status.Pending;
-      return acc;
+    if (value === Step.Check_Node_Running) {
+      stepStatus[value] = Status.Pending;
+      return stepStatus;
     }
 
-    acc[value] = Status.Failure;
-    return acc;
+    stepStatus[value] = Status.Failure;
+    return stepStatus;
   }, {} as Record<Step, Status>),
 }) as any as Store<WizardStoreState>;
 
@@ -89,23 +84,12 @@ store.register(
   'wizard/overview/goto',
   (_, step) => (state) =>
     produce(state, (draft) => {
-      // make sure the last step is still good
-      if (
-        step > 0 &&
-        draft.stepStatus[
-          (step - (step - 1 === Step.Settings ? 2 : 1)) as Step
-        ] !== Status.Success
-      ) {
-        return;
-      }
+      draft.buffers = { stderr: [], stdout: [] };
 
-      // the settings page can restart the node,
-      // but we want the user to stay on the settings page
+      // if they are on the settings page, don't yank them away
       if (draft.currentStep !== Step.Settings) {
         draft.currentStep = step;
       }
-
-      draft.buffers = { stderr: [], stdout: [] };
 
       for (let _step in Step) {
         const index = Number(_step);
@@ -123,144 +107,6 @@ store.register(
     }),
 );
 
-store.register(
-  'wizard/checkDocker',
-  () => (state) =>
-    produce(state, (draft) => {
-      draft.buffers = { stderr: [], stdout: [] };
-      draft.currentStep = Step.Check_Docker_Installed;
-      draft.stepStatus[Step.Check_Docker_Installed] = Status.Pending;
-      flux.dispatch('wizard/checkDocker/results');
-    }),
-);
-
-store.register('wizard/checkDocker/results', async () => {
-  // checking is so fast that we intentionally slow it down for UX
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  try {
-    await window.docker.version();
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Check_Docker_Installed] = Status.Success;
-        flux.dispatch('wizard/checkContainerBuilt');
-      });
-  } catch (err) {
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Check_Docker_Installed] = Status.Failure;
-      });
-  }
-});
-
-store.register('wizard/checkContainerBuilt', () => {
-  flux.dispatch('wizard/overview/goto', Step.Check_Container_Built);
-  flux.dispatch('wizard/checkContainerBuilt/results');
-});
-
-store.register('wizard/checkContainerBuilt/results', async () => {
-  // checking is so fast that we intentionally slow it down for UX
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  const results = await window.docker.built();
-  if (results === '') {
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Check_Container_Built] = Status.Success;
-        flux.dispatch('wizard/buildContainer');
-      });
-  } else {
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Check_Container_Built] = Status.Success;
-        draft.stepStatus[Step.Container_Building] = Status.Success;
-        flux.dispatch('wizard/checkContainerRunning');
-      });
-  }
-});
-
-store.register('wizard/buildContainer', () => {
-  flux.dispatch('wizard/overview/goto', Step.Container_Building);
-  flux.dispatch('wizard/buildContainer/results');
-});
-
-store.register('wizard/buildContainer/results', async () => {
-  try {
-    await window.docker.build({
-      stderr: (data) => flux.dispatch('wizard/stderr', data),
-      stdout: (data) => flux.dispatch('wizard/stdout', data),
-    });
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Container_Building] = Status.Success;
-        flux.dispatch('wizard/checkContainerRunning');
-      });
-  } catch (err) {
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Container_Building] = Status.Failure;
-      });
-  }
-});
-
-store.register('wizard/checkContainerRunning', (_, follow) => {
-  return (state) =>
-    produce(state, (draft) => {
-      if (follow) {
-        draft.currentStep = Step.Check_Container_Running;
-      }
-
-      flux.dispatch('wizard/overview/goto', Step.Check_Container_Running);
-      flux.dispatch('wizard/checkContainerRunning/results');
-    });
-});
-
-store.register('wizard/checkContainerRunning/results', async () => {
-  // checking is so fast that we intentionally slow it down for UX
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  const results = await window.docker.running();
-  if (results === '') {
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Check_Container_Running] = Status.Success;
-        flux.dispatch('wizard/startContainer');
-      });
-  } else {
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Check_Container_Running] = Status.Success;
-        draft.stepStatus[Step.Container_Starting] = Status.Success;
-        flux.dispatch('wizard/checkNodeRunning');
-      });
-  }
-});
-
-store.register('wizard/startContainer', () => {
-  flux.dispatch('wizard/overview/goto', Step.Container_Starting);
-  flux.dispatch('wizard/startContainer/results');
-});
-
-store.register('wizard/startContainer/results', async () => {
-  // starting is so fast that we intentionally slow it down for UX
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  try {
-    await window.docker.run();
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Container_Starting] = Status.Success;
-        flux.dispatch('wizard/checkNodeRunning');
-      });
-  } catch (err) {
-    return (state) =>
-      produce(state, (draft) => {
-        draft.buffers.stderr = [err.toString()];
-        draft.stepStatus[Step.Container_Starting] = Status.Failure;
-      });
-  }
-});
-
 store.register('wizard/checkNodeRunning', () => {
   flux.dispatch('wizard/overview/goto', Step.Check_Node_Running);
   flux.dispatch('wizard/checkNodeRunning/results');
@@ -270,20 +116,11 @@ store.register('wizard/checkNodeRunning/results', async () => {
   // checking is so fast that we intentionally slow it down for UX
   await new Promise((resolve) => setTimeout(resolve, 1500));
 
-  const results = await window.docker.running();
-  if (results === '') {
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Check_Node_Running] = Status.Success;
-        flux.dispatch('wizard/startNode');
-      });
+  const running = await window.goal.running();
+  if (!running) {
+    flux.dispatch('wizard/startNode');
   } else {
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Check_Node_Running] = Status.Success;
-        draft.stepStatus[Step.Node_Starting] = Status.Success;
-        flux.dispatch('wizard/checkNodeSynced');
-      });
+    flux.dispatch('wizard/checkNodeSynced');
   }
 });
 
@@ -298,11 +135,7 @@ store.register('wizard/startNode/results', async () => {
 
   try {
     await window.goal.start();
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Node_Starting] = Status.Success;
-        flux.dispatch('wizard/checkNodeSynced');
-      });
+    flux.dispatch('wizard/checkNodeSynced');
   } catch (err) {
     return (state) =>
       produce(state, (draft) => {
@@ -345,18 +178,9 @@ store.register('wizard/checkNodeSynced/results', async () => {
       readyTimes++;
     }
 
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Check_Node_Synced] = Status.Success;
-        draft.stepStatus[Step.Node_Syncing] = Status.Success;
-        flux.dispatch('wizard/showDashboard');
-      });
+    flux.dispatch('wizard/showDashboard');
   } catch (err) {
-    return (state) =>
-      produce(state, (draft) => {
-        draft.stepStatus[Step.Check_Node_Synced] = Status.Success;
-        flux.dispatch('wizard/syncNode');
-      });
+    flux.dispatch('wizard/syncNode');
   }
 });
 
@@ -424,11 +248,7 @@ store.register('wizard/syncNode/results', async () => {
 
     try {
       await nodeRequest('/ready', { maxRetries: 0 });
-      return (state) =>
-        produce(state, (draft) => {
-          draft.stepStatus[Step.Node_Syncing] = Status.Success;
-          flux.dispatch('wizard/showDashboard');
-        });
+      flux.dispatch('wizard/showDashboard');
     } catch (err) {
       // still not synced
       const output = await window.goal.status();
@@ -473,12 +293,6 @@ store.register(
         return;
       }
 
-      // see if we need to return to checking Docker Installation
-      if (draft.stepStatus[Step.Check_Docker_Installed] === Status.Failure) {
-        draft.currentStep = Step.Check_Docker_Installed;
-        return;
-      }
-
       // return to the current pending step that's not settings
       for (let step in draft.stepStatus) {
         let index = Number(step);
@@ -503,8 +317,7 @@ store.register('wizard/setPort', async (_, port) => {
     nodeAdded = false;
   }
 
-  await window.electron.setPort(port);
-  await window.docker.remap();
+  await window.store.set('port', port);
 
   return (state) =>
     produce(state, (draft) => {
@@ -513,7 +326,7 @@ store.register('wizard/setPort', async (_, port) => {
 });
 
 store.register('wizard/stopNode', async () => {
-  await window.docker.stop();
+  await window.goal.stop();
   flux.dispatch('wizard/overview/goto', Step.Settings);
 });
 

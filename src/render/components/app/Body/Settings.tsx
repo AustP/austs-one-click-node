@@ -58,7 +58,7 @@ export default function Settings({ className = '' }: { className?: string }) {
             await flux.dispatch('wizard/setPort', parseNumber(port));
 
             if (wasRunning) {
-              flux.dispatch('wizard/checkContainerRunning', true);
+              flux.dispatch('wizard/checkNodeRunning', true);
             }
 
             setSettingPort(false);

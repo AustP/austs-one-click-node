@@ -54,22 +54,6 @@ function sendIPC<T = any>(
   });
 }
 
-const docker = {
-  build: (
-    { stderr, stdout } = {
-      stderr: (data: string) => {},
-      stdout: (data: string) => {},
-    },
-  ) => sendIPC('docker.build', { stderr, stdout }),
-  built: () => sendIPC('docker.built'),
-  remap: () => sendIPC('docker.remap'),
-  run: () => sendIPC('docker.run'),
-  running: () => sendIPC('docker.running'),
-  stop: () => sendIPC('docker.stop'),
-  teardown: () => sendIPC('docker.teardown'),
-  version: () => sendIPC('docker.version'),
-};
-
 const electron = {
   maximize: () => sendIPC('maximize'),
   maximized: () => sendIPC('maximized'),
@@ -77,7 +61,6 @@ const electron = {
   platform: () => sendIPC('platform'),
   refresh: () => sendIPC('refresh'),
   quit: () => sendIPC('quit'),
-  setPort: (port: number) => sendIPC('setPort', { port }),
   setStartup: (startup: boolean) => sendIPC('setStartup', { startup }),
   unmaximize: () => sendIPC('unmaximize'),
 };
@@ -99,6 +82,7 @@ const goal = {
     sendIPC('goal.catchpoint', { network }),
   catchup: (catchpoint: string) => sendIPC('goal.catchup', { catchpoint }),
   deletepartkey: (id: string) => sendIPC('goal.deletepartkey', { id }),
+  running: () => sendIPC('goal.running'),
   start: () => sendIPC('goal.start'),
   status: () => sendIPC('goal.status'),
   stop: () => sendIPC('goal.stop'),
@@ -107,7 +91,6 @@ const goal = {
 
 const store = createStoreBindings('config');
 
-contextBridge.exposeInMainWorld('docker', docker);
 contextBridge.exposeInMainWorld('electron', electron);
 contextBridge.exposeInMainWorld('isDev', () => sendIPC('isDev'));
 contextBridge.exposeInMainWorld('goal', goal);
@@ -115,7 +98,6 @@ contextBridge.exposeInMainWorld('store', store);
 
 declare global {
   interface Window {
-    docker: typeof docker;
     electron: typeof electron;
     isDev: () => Promise<boolean>;
     goal: typeof goal;

@@ -90,3 +90,6 @@ typings/
 
 # Electron-Forge
 out/
+
+# packaged binaries
+src/bin/packaged/

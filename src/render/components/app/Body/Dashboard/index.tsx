@@ -28,7 +28,7 @@ export default function Dashboard() {
     async function fetchBlockAfter(blockNumber: number) {
       let timeout = setTimeout(() => {
         if (flux.wizard.selectState('currentStep') === Step.Dashboard) {
-          flux.dispatch('wizard/checkContainerRunning');
+          flux.dispatch('wizard/checkNodeRunning');
         }
       }, HEALTH_INTERVAL);
 
