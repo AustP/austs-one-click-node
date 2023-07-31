@@ -1,6 +1,6 @@
 {
-  "name": "austs-two-click-node",
-  "productName": "Aust's Two Click Node",
+  "name": "austs-one-click-node",
+  "productName": "Aust's One-Click Node",
   "version": "0.2.0",
   "author": "Aust",
   "description": "An easy to use interface to run an Algorand or Voi consensus node.",

@@ -76,7 +76,7 @@ export default function Header() {
         )}
       </div>
       <div className="flex items-center justify-between pb-4 pt-2 px-6">
-        <div className="font-extralight text-2xl">Aust's Two-Click Node</div>
+        <div className="font-extralight text-2xl">Aust's One-Click Node</div>
         <DarkMode />
       </div>
     </div>
