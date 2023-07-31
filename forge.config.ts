@@ -5,10 +5,13 @@ import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-nati
 import { WebpackPlugin } from '@electron-forge/plugin-webpack';
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import fs from 'fs';
+import path from 'path';
 
 import packageConfig from './package.json';
 import { mainConfig } from './webpack.main.config';
 import { rendererConfig } from './webpack.renderer.config';
+
+const ASSETS_DIR = path.join(__dirname, 'assets');
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -66,6 +69,7 @@ const config: ForgeConfig = {
     ],
     executableName: packageConfig.name,
     extraResource: [
+      'assets/source.png',
       'src/bin/packaged/algod',
       'src/bin/packaged/goal',
       'src/bin/packaged/kmd',
@@ -74,7 +78,28 @@ const config: ForgeConfig = {
     ],
   },
   rebuildConfig: {},
-  makers: [new MakerDeb({}), new MakerDMG({}), new MakerSquirrel({})],
+  makers: [
+    // MakerDeb class was having issues, so use raw object format
+    {
+      name: '@electron-forge/maker-deb',
+      config: {
+        icon: path.join(ASSETS_DIR, 'icons', 'png', '128x128.png'),
+      },
+    },
+    new MakerDMG({
+      background: path.join(ASSETS_DIR, 'source.png'),
+      icon: path.join(ASSETS_DIR, 'icons', 'mac', 'icon.icns'),
+      name: "Aust's One-Click Node",
+      overwrite: true,
+    }),
+    new MakerSquirrel({
+      exe: 'austs-one-click-node.exe',
+      iconUrl:
+        'https://raw.githubusercontent.com/AustP/austs-one-click-node/main/assets/icons/win/icon.ico',
+      setupExe: 'austs-one-click-node-setup.exe',
+      setupIcon: path.join(ASSETS_DIR, 'icons', 'win', 'icon.ico'),
+    }),
+  ],
   plugins: [
     new AutoUnpackNativesPlugin({}),
     new WebpackPlugin({
