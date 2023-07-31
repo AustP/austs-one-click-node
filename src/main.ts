@@ -32,6 +32,9 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     frame: false,
     height: 720,
+    icon: app.isPackaged
+      ? path.join(process.resourcesPath, 'source.png')
+      : path.join(__dirname, '..', '..', 'assets', 'source.png'),
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
