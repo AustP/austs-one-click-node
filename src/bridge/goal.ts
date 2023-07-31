@@ -169,13 +169,21 @@ ipcMain.on('goal.start', () => {
     ),
   );
 
-  child.stdout.on('data', (data: Uint8Array) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send(
-      'goal.start',
-      null,
-      String.fromCharCode.apply(null, data),
-    ),
-  );
+  child.stdout.on('data', (data: Uint8Array) => {
+    const str = String.fromCharCode.apply(null, data);
+    if (str.includes('Node running')) {
+      BrowserWindow.getAllWindows()[0]?.webContents.send(
+        'goal.start',
+        null,
+        str,
+      );
+    } else if (str.includes('Could not start node')) {
+      BrowserWindow.getAllWindows()[0]?.webContents.send(
+        'goal.start',
+        new Error(str),
+      );
+    }
+  });
 });
 
 ipcMain.on('goal.status', () => {
