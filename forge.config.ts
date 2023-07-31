@@ -76,6 +76,7 @@ const config: ForgeConfig = {
       'src/config/algorand.mainnet.genesis.json',
       'src/config/config.json',
     ],
+    icon: 'assets/icons/mac/icon.icns',
   },
   rebuildConfig: {},
   makers: [
@@ -87,9 +88,8 @@ const config: ForgeConfig = {
       },
     },
     new MakerDMG({
-      background: path.join(ASSETS_DIR, 'source.png'),
       icon: path.join(ASSETS_DIR, 'icons', 'mac', 'icon.icns'),
-      name: "Aust's One-Click Node",
+      name: 'Austs One-Click Node',
       overwrite: true,
     }),
     new MakerSquirrel({
