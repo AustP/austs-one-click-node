@@ -116,7 +116,7 @@ ipcMain.on('goal.catchpoint', async (_, { network }) => {
 });
 
 ipcMain.on('goal.catchup', (_, { catchpoint }) => {
-  exec(`${GOAL} node catchup -d "${DATA_DIR}" ${catchpoint}`, (err, stdout) =>
+  exec(`"${GOAL}" node catchup -d "${DATA_DIR}" ${catchpoint}`, (err, stdout) =>
     BrowserWindow.getAllWindows()[0]?.webContents.send(
       'goal.catchup',
       err,
@@ -127,7 +127,7 @@ ipcMain.on('goal.catchup', (_, { catchpoint }) => {
 
 ipcMain.on('goal.deletepartkey', (_, { id }) => {
   exec(
-    `${GOAL} account deletepartkey -d "${DATA_DIR}" --partkeyid ${id}`,
+    `"${GOAL}" account deletepartkey -d "${DATA_DIR}" --partkeyid ${id}`,
     (err, stdout) =>
       BrowserWindow.getAllWindows()[0]?.webContents.send(
         'goal.deletepartkey',
@@ -138,7 +138,7 @@ ipcMain.on('goal.deletepartkey', (_, { id }) => {
 });
 
 ipcMain.on('goal.running', async () => {
-  exec(`${GOAL} node status -d "${DATA_DIR}"`, (err, stdout) =>
+  exec(`"${GOAL}" node status -d "${DATA_DIR}"`, (err, stdout) =>
     BrowserWindow.getAllWindows()[0]?.webContents.send(
       'goal.running',
       null,
@@ -187,7 +187,7 @@ ipcMain.on('goal.start', () => {
 });
 
 ipcMain.on('goal.status', () => {
-  exec(`${GOAL} node status -d "${DATA_DIR}"`, (err, stdout) =>
+  exec(`"${GOAL}" node status -d "${DATA_DIR}"`, (err, stdout) =>
     BrowserWindow.getAllWindows()[0]?.webContents.send(
       'goal.status',
       err,
@@ -197,7 +197,7 @@ ipcMain.on('goal.status', () => {
 });
 
 ipcMain.on('goal.stop', () => {
-  exec(`${GOAL} node stop -d "${DATA_DIR}"`, (err, stdout) =>
+  exec(`"${GOAL}" node stop -d "${DATA_DIR}"`, (err, stdout) =>
     BrowserWindow.getAllWindows()[0]?.webContents.send(
       'goal.stop',
       err,
@@ -222,5 +222,5 @@ ipcMain.on('goal.token', () => {
 });
 
 app.on('will-quit', () => {
-  exec(`${GOAL} node stop -d "${DATA_DIR}"`);
+  exec(`"${GOAL}" node stop -d "${DATA_DIR}"`);
 });
