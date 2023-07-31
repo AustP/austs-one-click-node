@@ -32,19 +32,19 @@ export default function Header() {
         {isMac ? (
           <>
             <div
-              className="cursor-pointer flex h-full items-center justify-center pl-2 px-1"
+              className="cursor-pointer flex h-full hover:opacity-90 items-center justify-center pl-2 px-1"
               onClick={window.electron.quit}
             >
               <div className="bg-[#ff605c] h-3 rounded-full shrink-0 w-3" />
             </div>
             <div
-              className="cursor-pointer flex h-full items-center justify-center px-1"
+              className="cursor-pointer flex h-full hover:opacity-90 items-center justify-center px-1"
               onClick={window.electron.minimize}
             >
               <div className="bg-[#ffbd44] h-3 rounded-full shrink-0 w-3" />
             </div>
             <div
-              className="cursor-pointer flex h-full items-center justify-center px-1"
+              className="cursor-pointer flex h-full hover:opacity-90 items-center justify-center px-1"
               onClick={handleMaximize}
             >
               <div className="bg-[#00ca4e] h-3 rounded-full shrink-0 w-3" />
