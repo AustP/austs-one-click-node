@@ -19,6 +19,14 @@ import StatNumber from './StatNumber';
 const EXPIRING_KEYS_THRESHOLD = 268800; // about two week's worth of blocks
 const PARTICIPATION_PERIOD = 3000000; // about 3 months worth of blocks
 const SIGNING_TIMEOUT = 15000;
+const STATS_URL =
+  'https://vp2apscqbf2e57yys6x4iczcyi0znuce.lambda-url.us-west-2.on.aws/';
+
+const PARTICIPATING_NOTE = new Uint8Array(
+  Array.from("Participating from Aust's One-Click Node.", (c) =>
+    c.charCodeAt(0),
+  ),
+);
 
 export default function AccountViewer({
   className = '',
@@ -68,6 +76,16 @@ export default function AccountViewer({
 
       // if we re-add the account, it will load the key information
       await flux.dispatch('accounts/add', selectedAccount);
+
+      const account = flux.accounts.selectState('get', selectedAccount);
+      fetch(STATS_URL, {
+        body: JSON.stringify({
+          address: selectedAccount,
+          key: account.nodeParticipation.voteKey,
+          type: 'keygen',
+        }),
+        method: 'POST',
+      });
     } catch (err) {
       setGenerationError(err.toString());
     }
@@ -347,6 +365,7 @@ export default function AccountViewer({
                   group.addOnlineKeyReg(
                     {
                       from: selectedAccount,
+                      note: PARTICIPATING_NOTE,
                       selectionKey: account.nodeParticipation.selectionKey!,
                       stateProofKey: account.nodeParticipation.stateProofKey!,
                       voteFirst: account.nodeParticipation.voteFirst!,
@@ -358,7 +377,14 @@ export default function AccountViewer({
                     'Registration Transaction',
                   );
 
-                  signAndSubmit(group);
+                  await signAndSubmit(group);
+                  fetch(STATS_URL, {
+                    body: JSON.stringify({
+                      address: selectedAccount,
+                      type: 'online',
+                    }),
+                    method: 'POST',
+                  });
                 }}
               >
                 {waitingFor !== '' && <Spinner className="!h-6 !w-6" />}
