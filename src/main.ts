@@ -28,13 +28,21 @@ const createStore = () => {
 };
 
 const createWindow = () => {
+  const suffix =
+    process.platform === 'darwin'
+      ? 'icns'
+      : process.platform === 'linux'
+      ? 'png'
+      : 'ico';
+  const icon = `icon.${suffix}`;
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     frame: false,
     height: 720,
     icon: app.isPackaged
-      ? path.join(process.resourcesPath, 'source.png')
-      : path.join(__dirname, '..', '..', 'assets', 'source.png'),
+      ? path.join(process.resourcesPath, icon)
+      : path.join(__dirname, '..', '..', 'src', 'assets', 'icons', icon),
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },

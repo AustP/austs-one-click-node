@@ -6,7 +6,7 @@
   "description": "An easy to use interface to run an Algorand or Voi consensus node.",
   "main": ".webpack/main",
   "scripts": {
-    "create-icons": "electron-icon-builder --input=./assets/source.png --output=./assets",
+    "create-icons": "electron-icon-builder --input=./src/assets/icons/source.png --output=./src/assets",
     "lint": "eslint --ext .ts,.tsx .",
     "make": "electron-forge make",
     "make:linux": "electron-forge make --platform linux",
