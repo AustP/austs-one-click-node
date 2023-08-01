@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import Button from '@components/shared/Button';
 import CheckIcon from '@components/icons/Check';
+import EyeIcon from '@components/icons/Eye';
 import TextInput from '@components/shared/TextInput';
 import WalletIcon from '@components/icons/Wallet';
 
@@ -152,10 +153,10 @@ export default function AccountSelector({
           <div className="py-2">
             <div className="flex justify-between items-center px-4 py-2">
               <div className="flex font-medium items-center text-base">
-                <div className="bg-slate-600 flex h-8 items-center justify-center mr-2 rounded-full text-slate-100 text-sm w-8">
-                  <div>D</div>
+                <div className="bg-slate-600 flex h-8 items-center justify-center mr-2 rounded-full text-slate-100 w-8">
+                  <EyeIcon className="h-6 w-6" />
                 </div>
-                <div>Disconnected</div>
+                <div>Watch</div>
               </div>
               {!isAdding && (
                 <Button onClick={() => setIsAdding(true)}>Add</Button>
