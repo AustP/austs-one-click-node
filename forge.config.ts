@@ -11,7 +11,7 @@ import packageConfig from './package.json';
 import { mainConfig } from './webpack.main.config';
 import { rendererConfig } from './webpack.renderer.config';
 
-const ASSETS_DIR = path.join(__dirname, 'assets');
+const ASSETS_DIR = path.join(__dirname, 'src', 'assets');
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -69,14 +69,16 @@ const config: ForgeConfig = {
     ],
     executableName: packageConfig.name,
     extraResource: [
-      'assets/source.png',
+      'src/assets/icons/icon.icns',
+      'src/assets/icons/icon.ico',
+      'src/assets/icons/icon.png',
       'src/bin/packaged/algod',
       'src/bin/packaged/goal',
       'src/bin/packaged/kmd',
       'src/config/algorand.mainnet.genesis.json',
       'src/config/config.json',
     ],
-    icon: 'assets/icons/mac/icon.icns',
+    icon: path.join(ASSETS_DIR, 'icons', 'icon'),
   },
   rebuildConfig: {},
   makers: [
@@ -84,11 +86,11 @@ const config: ForgeConfig = {
     {
       name: '@electron-forge/maker-deb',
       config: {
-        icon: path.join(ASSETS_DIR, 'icons', 'png', '128x128.png'),
+        icon: path.join(ASSETS_DIR, 'icons', 'icon.png'),
       },
     },
     new MakerDMG({
-      icon: path.join(ASSETS_DIR, 'icons', 'mac', 'icon.icns'),
+      icon: path.join(ASSETS_DIR, 'icons', 'icon.icns'),
       name: 'Austs One-Click Node',
       overwrite: true,
     }),
@@ -97,7 +99,7 @@ const config: ForgeConfig = {
       iconUrl:
         'https://raw.githubusercontent.com/AustP/austs-one-click-node/main/assets/icons/win/icon.ico',
       setupExe: 'austs-one-click-node-setup.exe',
-      setupIcon: path.join(ASSETS_DIR, 'icons', 'win', 'icon.ico'),
+      setupIcon: path.join(ASSETS_DIR, 'icons', 'icon.ico'),
     }),
   ],
   plugins: [
