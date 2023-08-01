@@ -96,6 +96,7 @@ export default function AccountViewer({
   const signAndSubmit = useCallback(
     async (group: TransactionGroup) => {
       try {
+        setSubmissionError('');
         setWaitingFor('signature');
         await group.makeTxns();
 
