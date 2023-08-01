@@ -121,6 +121,19 @@ const config: ForgeConfig = {
       },
     }),
   ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        draft: true,
+        repository: {
+          authToken: process.env.GITHUB_TOKEN,
+          name: 'austs-one-click-node',
+          owner: 'AustP',
+        },
+      },
+    },
+  ],
 };
 
 export default config;
