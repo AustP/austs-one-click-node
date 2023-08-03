@@ -1,5 +1,11 @@
 # Aust's One-Click Node
 
+Aust's One-Click Node is an app for Mac, Windows, and Linux that makes it easy to spin up a node for Algorand or Voi and start participating in consensus.
+
+<img width="1023" alt="Screen Shot 2023-08-03 at 9 08 44 AM" src="https://github.com/AustP/austs-one-click-node/assets/2007045/2718a551-b4cb-4725-9f83-ccd03bbd8c98">
+
+## Installation
+
 Head over to the releases page and download the file required by your operating system.
 
 Mac builds are signed and notarized, so you shouldn't have any issue running them.
