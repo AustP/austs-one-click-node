@@ -6,7 +6,7 @@ Aust's One-Click Node is an app for Mac, Windows, and Linux that makes it easy t
 
 ## Installation
 
-Head over to the releases page and download the file required by your operating system.
+Head over to the [releases page](https://github.com/AustP/austs-one-click-node/releases) and download the file required by your operating system.
 
 Mac builds are signed and notarized, so you shouldn't have any issue running them.
 
