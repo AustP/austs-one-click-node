@@ -21,6 +21,8 @@ import StepViewer from './StepViewer';
 
 export default function Body() {
   const buffers = flux.wizard.useState('buffers');
+  const network = flux.wizard.selectState('network');
+  const networks = flux.wizard.selectState('networks');
   const step = flux.wizard.selectState('currentStep');
   const stepStatus = flux.wizard.selectState('stepStatus');
 
@@ -95,17 +97,20 @@ export default function Body() {
             }
           />
           <div className="grow" />
+          <div className="mb-2 text-sm text-slate-500">
+            Connected to {networks.find((n) => n.value === network)!.label}
+          </div>
           <div className="flex items-stretch overflow-hidden rounded-md">
             <Button
               className={`${
                 nodeStatus === 'stopped' || nodeStatus === 'starting'
-                  ? '!bg-green-600 !border-green-700 !text-slate-50'
+                  ? '!bg-green-600 !border-green-700'
                   : ''
               } border-r border-sky-700 dark:border-sky-950 flex grow items-center justify-center !rounded-none text-xl`}
               disabled={nodeStatus === 'starting' || nodeStatus === 'stopping'}
               onClick={async () => {
                 if (nodeStatus === 'stopped') {
-                  flux.dispatch('wizard/checkNodeRunning', true);
+                  flux.dispatch('wizard/checkNodeRunning');
                 } else if (nodeStatus === 'started') {
                   setNodeStatus('stopping');
                   await flux.dispatch('wizard/stopNode');
