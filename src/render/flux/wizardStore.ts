@@ -35,10 +35,13 @@ type WizardStoreState = {
   };
   catchUpStatus: CatchUpStatus;
   currentStep: Step;
+  network: 'algorand.mainnet' | 'voi.testnet';
   port: number;
   stepStatus: Record<Step, Status>;
 
   // selectors
+  infraHash: string;
+  networks: { label: string; value: string }[];
   running: boolean;
 };
 
@@ -55,6 +58,7 @@ const store = flux.addStore('wizard', {
   },
   catchUpStatus: CatchUpStatus.Unchecked,
   currentStep: Step.Check_Node_Running,
+  network: 'algorand.mainnet',
   port: 4160,
   stepStatus: Object.entries(Step).reduce((stepStatus, [, value]) => {
     if (typeof value === 'string') {
@@ -72,9 +76,11 @@ const store = flux.addStore('wizard', {
 }) as any as Store<WizardStoreState>;
 
 store.register('wizard/loadConfig', async () => {
+  const network = await window.store.get('network');
   const port = await window.store.get('port');
   return (state) =>
     produce(state, (draft) => {
+      draft.network = network;
       draft.port = port;
     });
 });
@@ -129,8 +135,15 @@ store.register('wizard/startNode', () => {
 });
 
 store.register('wizard/startNode/results', async () => {
+  const hash = store.selectState('infraHash');
+
   // starting is so fast that we intentionally slow it down for UX
   await new Promise((resolve) => setTimeout(resolve, 1500));
+
+  // make sure that the user didn't change the network or port
+  if (hash !== store.selectState('infraHash')) {
+    return;
+  }
 
   try {
     await window.goal.start();
@@ -163,8 +176,15 @@ store.register('wizard/checkNodeSynced', () => {
 });
 
 store.register('wizard/checkNodeSynced/results', async () => {
+  const hash = store.selectState('infraHash');
+
   // checking is so fast that we intentionally slow it down for UX
   await new Promise((resolve) => setTimeout(resolve, 1500));
+
+  // make sure that the user didn't change the network or port
+  if (hash !== store.selectState('infraHash')) {
+    return;
+  }
 
   try {
     await nodeRequest('/ready', { maxRetries: 0 });
@@ -176,10 +196,10 @@ store.register('wizard/checkNodeSynced/results', async () => {
 
 store.register('wizard/syncNode', () => {
   flux.dispatch('wizard/overview/goto', Step.Node_Syncing);
-  flux.dispatch('wizard/syncNode/results');
 
   return (state) =>
     produce(state, (draft) => {
+      flux.dispatch('wizard/syncNode/results');
       draft.catchUpStatus = CatchUpStatus.Unchecked;
     });
 });
@@ -207,15 +227,22 @@ store.register('wizard/syncNode/results', async () => {
         produce(state, (draft) => {
           draft.buffers.stderr = [output];
           draft.catchUpStatus = catchUpStatus;
-          setTimeout(() => flux.dispatch('wizard/syncNode/results'), delay);
+
+          const hash = store.selectState('infraHash');
+          setTimeout(() => {
+            // make sure that the user didn't change the network or port
+            if (hash !== store.selectState('infraHash')) {
+              return;
+            }
+
+            flux.dispatch('wizard/syncNode/results');
+          }, delay);
         });
     }
 
     if (catchUpStatus === CatchUpStatus.Unchecked) {
       // get the catchpoint for the network
-      const catchpoint = (
-        await window.goal.catchpoint('algorand.mainnet')
-      ).trim();
+      const catchpoint = (await window.goal.catchpoint()).trim();
       const catchpointRound = +catchpoint.split('#')[0];
 
       // compare the node to the catchpoint
@@ -246,10 +273,16 @@ store.register('wizard/syncNode/results', async () => {
         produce(state, (draft) => {
           draft.buffers.stderr = [output];
           draft.catchUpStatus = catchUpStatus;
-          setTimeout(
-            () => flux.dispatch('wizard/syncNode/results'),
-            SYNC_WATCH_DELAY,
-          );
+
+          const hash = store.selectState('infraHash');
+          setTimeout(() => {
+            // make sure that the user didn't change the network or port
+            if (hash !== store.selectState('infraHash')) {
+              return;
+            }
+
+            flux.dispatch('wizard/syncNode/results');
+          }, SYNC_WATCH_DELAY);
         });
     }
   } catch (err) {
@@ -301,6 +334,20 @@ store.register(
     }),
 );
 
+store.register('wizard/setNetwork', async (_, network) => {
+  if (nodeAdded) {
+    removeNode(`http://localhost:${store.selectState('port')}`);
+    nodeAdded = false;
+  }
+
+  await window.store.set('network', network);
+
+  return (state) =>
+    produce(state, (draft) => {
+      draft.network = network;
+    });
+});
+
 store.register('wizard/setPort', async (_, port) => {
   if (nodeAdded) {
     removeNode(`http://localhost:${store.selectState('port')}`);
@@ -331,6 +378,15 @@ store.register(
   (_, data) => (state) =>
     produce(state, (draft) => void draft.buffers.stdout.push(data)),
 );
+
+// changing the network or port requires a node restart
+// infraHash is a shortcut to check for that
+store.addSelector('infraHash', (state) => state.network + state.port);
+
+store.addSelector('networks', () => [
+  { label: 'Algorand MainNet', value: 'algorand.mainnet' },
+  { label: 'Voi TestNet', value: 'voi.testnet' },
+]);
 
 store.addSelector(
   'running',

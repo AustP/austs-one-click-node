@@ -78,8 +78,7 @@ const goal = {
       firstValid,
       lastValid,
     }),
-  catchpoint: (network: 'algorand.mainnet') =>
-    sendIPC('goal.catchpoint', { network }),
+  catchpoint: () => sendIPC('goal.catchpoint'),
   catchup: (catchpoint: string) => sendIPC('goal.catchup', { catchpoint }),
   deletepartkey: (id: string) => sendIPC('goal.deletepartkey', { id }),
   running: () => sendIPC('goal.running'),

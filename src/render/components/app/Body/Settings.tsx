@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 import Button from '@components/shared/Button';
 import Checkbox from '@components/shared/Checkbox';
+import Select from '@components/shared/Select';
 import Spinner from '@components/shared/Spinner';
 import TextInput from '@components/shared/TextInput';
 import { parseNumber } from '@/render/utils';
@@ -10,22 +11,28 @@ import { parseNumber } from '@/render/utils';
 import Flush from './Flush';
 
 export default function Settings({ className = '' }: { className?: string }) {
+  const [network, setNetwork] = useState('');
   const [port, setPort] = useState('');
   const [startup, setStartup] = useState(false);
+  const [settingNetwork, setSettingNetwork] = useState(false);
   const [settingPort, setSettingPort] = useState(false);
+
+  const networks = flux.wizard.selectState('networks');
 
   useEffect(() => {
     (async () => {
+      const network = await window.store.get('network');
       const port = await window.store.get('port');
       const startup = await window.store.get('startup');
 
+      setNetwork(network);
       setPort(port.toString());
       setStartup(startup);
     })();
   }, []);
 
   return (
-    <Flush className={className}>
+    <Flush className={`w-full ${className}`}>
       <div className="font-light mb-6 text-xl">Settings</div>
       <Checkbox
         checked={startup}
@@ -37,7 +44,6 @@ export default function Settings({ className = '' }: { className?: string }) {
       />
       <div className="flex items-end mt-4">
         <TextInput
-          className="mt-4"
           label="Port (Changing the port will cause the node to restart)"
           onChange={(value) => setPort(value)}
           type="number"
@@ -53,13 +59,9 @@ export default function Settings({ className = '' }: { className?: string }) {
           onClick={async () => {
             setSettingPort(true);
 
-            const wasRunning = flux.wizard.selectState('running');
             await flux.dispatch('wizard/stopNode');
             await flux.dispatch('wizard/setPort', parseNumber(port));
-
-            if (wasRunning) {
-              flux.dispatch('wizard/checkNodeRunning', true);
-            }
+            flux.dispatch('wizard/checkNodeRunning');
 
             setSettingPort(false);
           }}
@@ -73,6 +75,42 @@ export default function Settings({ className = '' }: { className?: string }) {
             'Set Port'
           )}
         </Button>
+      </div>
+      <div className="mt-4">
+        <div className="mb-1 text-slate-500 text-sm">
+          Network (Changing the network will cause the node to restart)
+        </div>
+        <div className="flex items-end">
+          <Select
+            items={networks}
+            onChange={(value) => setNetwork(value)}
+            value={network}
+          />
+          <Button
+            className="flex items-center ml-2 shrink-0"
+            disabled={
+              network === flux.wizard.selectState('network') || settingNetwork
+            }
+            onClick={async () => {
+              setSettingNetwork(true);
+
+              await flux.dispatch('wizard/stopNode');
+              await flux.dispatch('wizard/setNetwork', network);
+              flux.dispatch('wizard/checkNodeRunning');
+
+              setSettingNetwork(false);
+            }}
+          >
+            {settingNetwork ? (
+              <>
+                <Spinner className="!h-6 mr-2 !w-4" />
+                <div>Setting...</div>
+              </>
+            ) : (
+              'Set Network'
+            )}
+          </Button>
+        </div>
       </div>
     </Flush>
   );

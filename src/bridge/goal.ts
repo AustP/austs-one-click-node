@@ -9,6 +9,17 @@ import { productName } from '../../package.json';
 const CATCHPOINT_ENDPOINTS = {
   'algorand.mainnet':
     'https://algorand-catchpoints.s3.us-east-2.amazonaws.com/channel/mainnet/latest.catchpoint',
+  'voi.testnet': 'https://testnet-api.voi.nodly.io/v2/status',
+};
+
+const CONFIG_FILES = {
+  'algorand.mainnet': 'algorand.mainnet.config.json',
+  'voi.testnet': 'voi.testnet.config.json',
+};
+
+const GENESIS_FILES = {
+  'algorand.mainnet': 'algorand.mainnet.genesis.json',
+  'voi.testnet': 'voi.testnet.genesis.json',
 };
 
 const SUFFIX = process.platform === 'win32' ? '.exe' : '';
@@ -45,18 +56,46 @@ const CONFIG_DIR = app.isPackaged
       'config',
     );
 
-const DATA_DIR = path.join(
-  app.getPath('appData'),
-  productName,
-  'algod',
-  'data',
-);
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o777 });
-  fs.copyFileSync(
-    path.join(CONFIG_DIR, 'config.json'),
-    path.join(DATA_DIR, 'config.json'),
-  );
+const DATA_DIRS = {
+  'algorand.mainnet': path.join(
+    app.getPath('appData'),
+    productName,
+    'data',
+    'algorand.mainnet',
+  ),
+  'voi.testnet': path.join(
+    app.getPath('appData'),
+    productName,
+    'data',
+    'voi.testnet',
+  ),
+};
+
+function getDataDir() {
+  const network = store.get('network');
+  const dataDir = DATA_DIRS[network as keyof typeof DATA_DIRS];
+
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true, mode: 0o777 });
+
+    // we made it so multiple network data dirs can coexist
+    // v1.0.0 and below used to use the same data dir for all networks
+    // so we need to move the old data dir to the new one, if applicable
+    if (network === 'algorand.mainnet') {
+      const oldDataDir = path.join(
+        app.getPath('appData'),
+        productName,
+        'algod',
+        'data',
+      );
+
+      if (fs.existsSync(oldDataDir)) {
+        fs.renameSync(oldDataDir, dataDir);
+      }
+    }
+  }
+
+  return dataDir;
 }
 
 ipcMain.on('goal.addpartkey', (_, { account, firstValid, lastValid }) => {
@@ -64,7 +103,7 @@ ipcMain.on('goal.addpartkey', (_, { account, firstValid, lastValid }) => {
     'account',
     'addpartkey',
     '-d',
-    DATA_DIR,
+    getDataDir(),
     '-a',
     account,
     '--roundFirstValid',
@@ -95,15 +134,24 @@ ipcMain.on('goal.addpartkey', (_, { account, firstValid, lastValid }) => {
   );
 });
 
-ipcMain.on('goal.catchpoint', async (_, { network }) => {
+ipcMain.on('goal.catchpoint', async () => {
   let err = null;
   let stdout = null;
 
+  const network = store.get('network');
   try {
-    const response = await fetch(
-      CATCHPOINT_ENDPOINTS[network as keyof typeof CATCHPOINT_ENDPOINTS],
-    );
-    stdout = await response.text();
+    if (network === 'voi.testnet') {
+      const response = await fetch(
+        CATCHPOINT_ENDPOINTS[network as keyof typeof CATCHPOINT_ENDPOINTS],
+      );
+      const json = await response.json();
+      stdout = json['last-catchpoint'];
+    } else {
+      const response = await fetch(
+        CATCHPOINT_ENDPOINTS[network as keyof typeof CATCHPOINT_ENDPOINTS],
+      );
+      stdout = await response.text();
+    }
   } catch (e) {
     err = e;
   }
@@ -116,18 +164,20 @@ ipcMain.on('goal.catchpoint', async (_, { network }) => {
 });
 
 ipcMain.on('goal.catchup', (_, { catchpoint }) => {
-  exec(`"${GOAL}" node catchup -d "${DATA_DIR}" ${catchpoint}`, (err, stdout) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send(
-      'goal.catchup',
-      err,
-      stdout,
-    ),
+  exec(
+    `"${GOAL}" node catchup -d "${getDataDir()}" ${catchpoint}`,
+    (err, stdout) =>
+      BrowserWindow.getAllWindows()[0]?.webContents.send(
+        'goal.catchup',
+        err,
+        stdout,
+      ),
   );
 });
 
 ipcMain.on('goal.deletepartkey', (_, { id }) => {
   exec(
-    `"${GOAL}" account deletepartkey -d "${DATA_DIR}" --partkeyid ${id}`,
+    `"${GOAL}" account deletepartkey -d "${getDataDir()}" --partkeyid ${id}`,
     (err, stdout) =>
       BrowserWindow.getAllWindows()[0]?.webContents.send(
         'goal.deletepartkey',
@@ -138,7 +188,7 @@ ipcMain.on('goal.deletepartkey', (_, { id }) => {
 });
 
 ipcMain.on('goal.running', async () => {
-  exec(`"${GOAL}" node status -d "${DATA_DIR}"`, (err, stdout) =>
+  exec(`"${GOAL}" node status -d "${getDataDir()}"`, (err, stdout) =>
     BrowserWindow.getAllWindows()[0]?.webContents.send(
       'goal.running',
       null,
@@ -148,16 +198,28 @@ ipcMain.on('goal.running', async () => {
 });
 
 ipcMain.on('goal.start', () => {
-  if (!fs.existsSync(path.join(DATA_DIR, 'genesis.json'))) {
+  const dataDir = getDataDir();
+  const network = store.get('network');
+  if (!fs.existsSync(path.join(dataDir, 'config.json'))) {
     fs.copyFileSync(
-      path.join(CONFIG_DIR, 'algorand.mainnet.genesis.json'),
-      path.join(DATA_DIR, 'genesis.json'),
+      path.join(CONFIG_DIR, CONFIG_FILES[network as keyof typeof CONFIG_FILES]),
+      path.join(dataDir, 'config.json'),
+    );
+  }
+
+  if (!fs.existsSync(path.join(dataDir, 'genesis.json'))) {
+    fs.copyFileSync(
+      path.join(
+        CONFIG_DIR,
+        GENESIS_FILES[network as keyof typeof GENESIS_FILES],
+      ),
+      path.join(dataDir, 'genesis.json'),
     );
   }
 
   const child = spawn(ALGOD, [
     '-d',
-    DATA_DIR,
+    dataDir,
     '-l',
     `0.0.0.0:${store.get('port')}`,
   ]);
@@ -187,7 +249,7 @@ ipcMain.on('goal.start', () => {
 });
 
 ipcMain.on('goal.status', () => {
-  exec(`"${GOAL}" node status -d "${DATA_DIR}"`, (err, stdout) =>
+  exec(`"${GOAL}" node status -d "${getDataDir()}"`, (err, stdout) =>
     BrowserWindow.getAllWindows()[0]?.webContents.send(
       'goal.status',
       err,
@@ -197,7 +259,7 @@ ipcMain.on('goal.status', () => {
 });
 
 ipcMain.on('goal.stop', () => {
-  exec(`"${GOAL}" node stop -d "${DATA_DIR}"`, (err, stdout) =>
+  exec(`"${GOAL}" node stop -d "${getDataDir()}"`, (err, stdout) =>
     BrowserWindow.getAllWindows()[0]?.webContents.send(
       'goal.stop',
       err,
@@ -211,7 +273,7 @@ ipcMain.on('goal.token', () => {
   let stdout = null;
 
   try {
-    stdout = fs.readFileSync(path.join(DATA_DIR, 'algod.admin.token'), {
+    stdout = fs.readFileSync(path.join(getDataDir(), 'algod.admin.token'), {
       encoding: 'utf-8',
     });
   } catch (e) {
@@ -222,5 +284,5 @@ ipcMain.on('goal.token', () => {
 });
 
 app.on('will-quit', () => {
-  exec(`"${GOAL}" node stop -d "${DATA_DIR}"`);
+  exec(`"${GOAL}" node stop -d "${getDataDir()}"`);
 });
