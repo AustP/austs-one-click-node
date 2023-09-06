@@ -18,7 +18,7 @@ import StatNumber from './StatNumber';
 
 const EXPIRING_KEYS_THRESHOLD = 268800; // about two week's worth of blocks
 const PARTICIPATION_PERIOD = 3000000; // about 3 months worth of blocks
-const SIGNING_TIMEOUT = 15000;
+const SIGNING_TIMEOUT = 30000;
 const STATS_URL =
   'https://vp2apscqbf2e57yys6x4iczcyi0znuce.lambda-url.us-west-2.on.aws/';
 
