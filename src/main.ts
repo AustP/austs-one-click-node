@@ -1,7 +1,10 @@
 import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
 import isDev from 'electron-is-dev';
 import Store from 'electron-persist-secure/lib/store';
+import fs from 'fs';
 import path from 'path';
+
+import { productName } from '../package.json';
 
 const DEFAULT_NETWORK = 'algorand.mainnet';
 const DEFAULT_PORT = 4160;
@@ -15,6 +18,15 @@ declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 // Squirrel.Windows will spawn the app multiple times while installing/updating
 // to make sure only one app is running, we quit if we detect squirrel
 if (require('electron-squirrel-startup')) {
+  const squirrelEvent = process.argv[1];
+  if (squirrelEvent === '--squirrel-uninstall') {
+    // delete the data directory
+    const DATA_DIR = path.join(app.getPath('appData'), productName, 'data');
+    if (fs.existsSync(DATA_DIR)) {
+      fs.rmdirSync(DATA_DIR, { recursive: true });
+    }
+  }
+
   app.quit();
 }
 
