@@ -38,6 +38,7 @@
     "autoprefixer": "^10.4.14",
     "babel-loader": "^9.1.2",
     "css-loader": "^6.0.0",
+    "dotenv": "^16.3.1",
     "electron": "25.2.0",
     "electron-icon-builder": "^2.0.1",
     "eslint": "^8.0.1",

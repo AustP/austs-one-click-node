@@ -1,9 +1,9 @@
-import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerDMG } from '@electron-forge/maker-dmg';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
 import { WebpackPlugin } from '@electron-forge/plugin-webpack';
 import type { ForgeConfig } from '@electron-forge/shared-types';
+import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 
@@ -81,6 +81,13 @@ const config: ForgeConfig = {
       'src/config/voi.testnet.config.json',
     ],
     icon: path.join(ASSETS_DIR, 'icons', 'icon'),
+    osxNotarize: {
+      appleId: process.env.APPLE_ID!,
+      appleIdPassword: process.env.APPLE_PASSWORD!,
+      teamId: process.env.APPLE_TEAM_ID!,
+      tool: 'notarytool',
+    },
+    osxSign: {},
   },
   rebuildConfig: {},
   makers: [
