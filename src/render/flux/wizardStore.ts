@@ -4,7 +4,6 @@ import { produce } from 'immer';
 
 const CATCHUP_FINISH_DELAY = 7000; // wait this long after catchup is complete to check if node is synced
 const CATCHUP_THRESHOLD = 720000; // catchup is triggered if node is this many blocks behind. ~100 blocks downloaded per sec. ~2 hrs to catchup
-const READY_CHECKS_STARTUP = 7; // how many ready checks after startup to consider node synced
 const SYNC_WATCH_DELAY = 1000; // how long during syncing to wait between checks
 
 enum CatchUpStatus {
@@ -168,16 +167,7 @@ store.register('wizard/checkNodeSynced/results', async () => {
   await new Promise((resolve) => setTimeout(resolve, 1500));
 
   try {
-    // sometimes when the docker container starts, the node will report as ready
-    // even though it is not ready. our workaround is to check for readiness
-    // a few times.
-    let readyTimes = 0;
-    while (readyTimes < READY_CHECKS_STARTUP) {
-      await nodeRequest('/ready', { maxRetries: 0 });
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      readyTimes++;
-    }
-
+    await nodeRequest('/ready', { maxRetries: 0 });
     flux.dispatch('wizard/showDashboard');
   } catch (err) {
     flux.dispatch('wizard/syncNode');
