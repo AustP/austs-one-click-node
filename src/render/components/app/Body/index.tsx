@@ -44,8 +44,10 @@ export default function Body() {
   }, [checkNodeRunningStatus, nodeStatus, nodeSyncedStatus]);
 
   // when the component first loads, load config and start going through the steps
-  useEffect(() => void flux.dispatch('wizard/loadConfig'), []);
-  useEffect(() => void flux.dispatch('wizard/checkNodeRunning'), []);
+  useEffect(() => {
+    flux.dispatch('wizard/loadConfig');
+    flux.dispatch('wizard/checkNodeRunning');
+  }, []);
 
   const anyParticipating = flux.accounts.useState('anyParticipating');
 
