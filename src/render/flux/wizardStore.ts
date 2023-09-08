@@ -35,13 +35,17 @@ type WizardStoreState = {
   };
   catchUpStatus: CatchUpStatus;
   currentStep: Step;
-  network: 'algorand.mainnet' | 'voi.testnet';
-  port: number;
+  _network: 'algorand.mainnet' | 'voi.testnet';
+  _port: number;
   stepStatus: Record<Step, Status>;
+  windowIndex: number;
 
   // selectors
   infraHash: string;
+  isMainWindow: boolean;
+  network: string;
   networks: { label: string; value: string }[];
+  port: number;
   running: boolean;
 };
 
@@ -58,8 +62,8 @@ const store = flux.addStore('wizard', {
   },
   catchUpStatus: CatchUpStatus.Unchecked,
   currentStep: Step.Check_Node_Running,
-  network: 'algorand.mainnet',
-  port: 4160,
+  _network: 'algorand.mainnet',
+  _port: 4160,
   stepStatus: Object.entries(Step).reduce((stepStatus, [, value]) => {
     if (typeof value === 'string') {
       return stepStatus;
@@ -73,15 +77,20 @@ const store = flux.addStore('wizard', {
     stepStatus[value] = Status.Failure;
     return stepStatus;
   }, {} as Record<Step, Status>),
+  windowIndex: 0,
 }) as any as Store<WizardStoreState>;
 
 store.register('wizard/loadConfig', async () => {
+  window.setIndexCallback((index) =>
+    flux.dispatch('wizard/setWindowIndex', index),
+  );
+
   const network = await window.store.get('network');
   const port = await window.store.get('port');
   return (state) =>
     produce(state, (draft) => {
-      draft.network = network;
-      draft.port = port;
+      draft._network = network;
+      draft._port = port;
     });
 });
 
@@ -344,7 +353,7 @@ store.register('wizard/setNetwork', async (_, network) => {
 
   return (state) =>
     produce(state, (draft) => {
-      draft.network = network;
+      draft._network = network;
     });
 });
 
@@ -358,9 +367,17 @@ store.register('wizard/setPort', async (_, port) => {
 
   return (state) =>
     produce(state, (draft) => {
-      draft.port = port;
+      draft._port = port;
     });
 });
+
+store.register(
+  'wizard/setWindowIndex',
+  (_, index) => (state) =>
+    produce(state, (draft) => {
+      draft.windowIndex = index;
+    }),
+);
 
 store.register('wizard/stopNode', async () => {
   await window.goal.stop();
@@ -381,12 +398,29 @@ store.register(
 
 // changing the network or port requires a node restart
 // infraHash is a shortcut to check for that
-store.addSelector('infraHash', (state) => state.network + state.port);
+store.addSelector('infraHash', (state) => state._network + state._port);
+
+store.addSelector('isMainWindow', (state) => state.windowIndex === 0);
 
 store.addSelector('networks', () => [
   { label: 'Algorand MainNet', value: 'algorand.mainnet' },
   { label: 'Voi TestNet', value: 'voi.testnet' },
 ]);
+
+// this code is duplicated in main rather than passing
+// these values back and forth with every IPC call
+store.addSelector('network', (state) => {
+  const isMainWindow = store.selectState('isMainWindow');
+  if (isMainWindow) {
+    return state._network;
+  } else {
+    // if we're not the main window, we need to use the other network
+    return store
+      .selectState('networks')
+      .find((network) => network.value !== state._network)!.value;
+  }
+});
+store.addSelector('port', (state) => state._port + state.windowIndex);
 
 store.addSelector(
   'running',

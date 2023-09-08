@@ -3,7 +3,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import fs from 'fs';
 import path from 'path';
 
-import { store } from '../main';
+import { ModifiedBrowserWindow } from '../main';
 import { productName } from '../../package.json';
 
 const CATCHPOINT_ENDPOINTS = {
@@ -71,8 +71,11 @@ const DATA_DIRS = {
   ),
 };
 
-function getDataDir() {
-  const network = store.get('network');
+function getDataDir(network: string) {
+  if (!(network in DATA_DIRS)) {
+    throw new Error(`Unknown network: ${network}`);
+  }
+
   const dataDir = DATA_DIRS[network as keyof typeof DATA_DIRS];
 
   if (!fs.existsSync(dataDir)) {
@@ -98,12 +101,16 @@ function getDataDir() {
   return dataDir;
 }
 
-ipcMain.on('goal.addpartkey', (_, { account, firstValid, lastValid }) => {
+ipcMain.on('goal.addpartkey', (event, { account, firstValid, lastValid }) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+
   const child = spawn(GOAL, [
     'account',
     'addpartkey',
     '-d',
-    getDataDir(),
+    getDataDir(window.getNetwork()),
     '-a',
     account,
     '--roundFirstValid',
@@ -113,13 +120,13 @@ ipcMain.on('goal.addpartkey', (_, { account, firstValid, lastValid }) => {
   ]);
 
   child.stderr.on('data', (data: Uint8Array) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send(
+    window.webContents.send(
       'goal.addpartkey.stderr',
       String.fromCharCode.apply(null, data),
     ),
   );
   child.stdout.on('data', (data: Uint8Array) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send(
+    window.webContents.send(
       'goal.addpartkey.stdout',
       null,
       String.fromCharCode.apply(null, data),
@@ -127,18 +134,19 @@ ipcMain.on('goal.addpartkey', (_, { account, firstValid, lastValid }) => {
   );
 
   child.on('exit', (code) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send(
-      'goal.addpartkey',
-      code ? true : null,
-    ),
+    window.webContents.send('goal.addpartkey', code ? true : null),
   );
 });
 
-ipcMain.on('goal.catchpoint', async () => {
+ipcMain.on('goal.catchpoint', async (event) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+
   let err = null;
   let stdout = null;
 
-  const network = store.get('network');
+  const network = window.getNetwork();
   try {
     if (network === 'voi.testnet') {
       const response = await fetch(
@@ -156,50 +164,55 @@ ipcMain.on('goal.catchpoint', async () => {
     err = e;
   }
 
-  BrowserWindow.getAllWindows()[0]?.webContents.send(
-    'goal.catchpoint',
-    err,
-    stdout,
+  window.webContents.send('goal.catchpoint', err, stdout);
+});
+
+ipcMain.on('goal.catchup', (event, { catchpoint }) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+  exec(
+    `"${GOAL}" node catchup -d "${getDataDir(
+      window.getNetwork(),
+    )}" ${catchpoint}`,
+    (err, stdout) => window.webContents.send('goal.catchup', err, stdout),
   );
 });
 
-ipcMain.on('goal.catchup', (_, { catchpoint }) => {
+ipcMain.on('goal.deletepartkey', (event, { id }) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
   exec(
-    `"${GOAL}" node catchup -d "${getDataDir()}" ${catchpoint}`,
+    `"${GOAL}" account deletepartkey -d "${getDataDir(
+      window.getNetwork(),
+    )}" --partkeyid ${id}`,
+    (err, stdout) => window.webContents.send('goal.deletepartkey', err, stdout),
+  );
+});
+
+ipcMain.on('goal.running', async (event) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+  exec(
+    `"${GOAL}" node status -d "${getDataDir(window.getNetwork())}"`,
     (err, stdout) =>
-      BrowserWindow.getAllWindows()[0]?.webContents.send(
-        'goal.catchup',
-        err,
-        stdout,
+      window.webContents.send(
+        'goal.running',
+        null,
+        stdout.includes('Last committed block:'),
       ),
   );
 });
 
-ipcMain.on('goal.deletepartkey', (_, { id }) => {
-  exec(
-    `"${GOAL}" account deletepartkey -d "${getDataDir()}" --partkeyid ${id}`,
-    (err, stdout) =>
-      BrowserWindow.getAllWindows()[0]?.webContents.send(
-        'goal.deletepartkey',
-        err,
-        stdout,
-      ),
-  );
-});
+ipcMain.on('goal.start', (event) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+  const network = window.getNetwork();
+  const dataDir = getDataDir(network);
 
-ipcMain.on('goal.running', async () => {
-  exec(`"${GOAL}" node status -d "${getDataDir()}"`, (err, stdout) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send(
-      'goal.running',
-      null,
-      stdout.includes('Last committed block:'),
-    ),
-  );
-});
-
-ipcMain.on('goal.start', () => {
-  const dataDir = getDataDir();
-  const network = store.get('network');
   if (!fs.existsSync(path.join(dataDir, 'config.json'))) {
     fs.copyFileSync(
       path.join(CONFIG_DIR, CONFIG_FILES[network as keyof typeof CONFIG_FILES]),
@@ -221,11 +234,12 @@ ipcMain.on('goal.start', () => {
     '-d',
     dataDir,
     '-l',
-    `0.0.0.0:${store.get('port')}`,
+    `0.0.0.0:${window.getPort()}`,
   ]);
+  window.on('closed', () => exec(`"${GOAL}" node stop -d "${dataDir}"`));
 
   child.stderr.on('data', (data: Uint8Array) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send(
+    window.webContents.send(
       'goal.start',
       String.fromCharCode.apply(null, data),
     ),
@@ -234,55 +248,58 @@ ipcMain.on('goal.start', () => {
   child.stdout.on('data', (data: Uint8Array) => {
     const str = String.fromCharCode.apply(null, data);
     if (str.includes('Node running')) {
-      BrowserWindow.getAllWindows()[0]?.webContents.send(
-        'goal.start',
-        null,
-        str,
-      );
+      window.webContents.send('goal.start', null, str);
     } else if (str.includes('Could not start node')) {
-      BrowserWindow.getAllWindows()[0]?.webContents.send(
-        'goal.start',
-        new Error(str),
-      );
+      window.webContents.send('goal.start', new Error(str));
     }
   });
 });
 
-ipcMain.on('goal.status', () => {
-  exec(`"${GOAL}" node status -d "${getDataDir()}"`, (err, stdout) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send(
-      'goal.status',
-      err,
-      stdout,
-    ),
+ipcMain.on('goal.status', (event) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+  exec(
+    `"${GOAL}" node status -d "${getDataDir(window.getNetwork())}"`,
+    (err, stdout) => window.webContents.send('goal.status', err, stdout),
   );
 });
 
-ipcMain.on('goal.stop', () => {
-  exec(`"${GOAL}" node stop -d "${getDataDir()}"`, (err, stdout) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send(
-      'goal.stop',
-      err,
-      stdout,
-    ),
+ipcMain.on('goal.stop', (event) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+  exec(
+    `"${GOAL}" node stop -d "${getDataDir(window.getNetwork())}"`,
+    (err, stdout) => window.webContents.send('goal.stop', err, stdout),
   );
 });
 
-ipcMain.on('goal.token', () => {
+ipcMain.on('goal.token', (event) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+
   let err = null;
   let stdout = null;
 
   try {
-    stdout = fs.readFileSync(path.join(getDataDir(), 'algod.admin.token'), {
-      encoding: 'utf-8',
-    });
+    stdout = fs.readFileSync(
+      path.join(getDataDir(window.getNetwork()), 'algod.admin.token'),
+      {
+        encoding: 'utf-8',
+      },
+    );
   } catch (e) {
     err = e;
   }
 
-  BrowserWindow.getAllWindows()[0]?.webContents.send('goal.token', err, stdout);
+  window.webContents.send('goal.token', err, stdout);
 });
 
 app.on('will-quit', () => {
-  exec(`"${GOAL}" node stop -d "${getDataDir()}"`);
+  for (const network of Object.keys(DATA_DIRS)) {
+    const dataDir = getDataDir(network);
+    exec(`"${GOAL}" node stop -d "${dataDir}"`);
+  }
 });
