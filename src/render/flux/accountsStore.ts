@@ -178,6 +178,16 @@ store.register(
   },
 );
 
+store.register('accounts/refresh', async (dispatch) => {
+  let promises = [];
+  for (const account of store.selectState('list')) {
+    promises.push(dispatch('accounts/add', account, false));
+  }
+
+  await Promise.all(promises);
+  dispatch('accounts/save');
+});
+
 store.register(
   'accounts/remove',
   (_, account: string) => (state) =>

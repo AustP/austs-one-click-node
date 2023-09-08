@@ -70,13 +70,7 @@ export default function Dashboard() {
 
         // every 10 blocks, check all of our accounts for participation
         if (lastRound % PARTICIPATION_INTERVAL === 0) {
-          let promises = [];
-          for (const account of accounts) {
-            promises.push(flux.dispatch('accounts/add', account, false));
-          }
-
-          await Promise.all(promises);
-          flux.dispatch('accounts/save');
+          flux.dispatch('accounts/refresh');
         }
 
         setLastBlock(lastRound);
@@ -89,6 +83,9 @@ export default function Dashboard() {
     }
 
     fetchBlockAfter(0);
+
+    // also refresh the accounts
+    flux.dispatch('accounts/refresh');
 
     return () => void (terminated = true);
   }, []);
