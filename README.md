@@ -22,3 +22,16 @@ If you want to run a node for Algorand and Voi, you can launch another node from
 The list of accounts is shared between the two instances.
 
 What this means is that you will need to have your Algorand accounts and Voi accounts shared in the account list. The best way to do this is by adding all of your accounts as watch accounts. When you need to sign transactions, then you should connect your wallet and sign the transactions. When you're done, disconnect the wallet so it becomes a watch account again. If you follow this protocol, you should have no problems with this quirk.
+
+## Signing Transactions With a Voi Account
+
+Defly doesn't work with Voi. However, if you use [A-Wallet](https://a-wallet.net/) (an [open-source project](https://github.com/scholtz/wallet/), use at your own risk!), you can sign transactions. Here is the process:
+
+1. Click the "Connect" button for Defly.
+2. When the QR Code pops up, click it to copy the Wallet Connect URL.
+3. In A-Wallet, go to the WalletConnect tab and click the "Initialize connection to Wallet Connect" button.
+4. Paste the URL into the textbox and press the "Connect" button.
+
+Now when you press the Go Online/Offline buttons, A-Wallet should prompt you to sign those transactions.
+
+Thanks to APT, pk, and django.algo in Discord for sharing these instructions!
