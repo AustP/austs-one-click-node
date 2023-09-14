@@ -36,6 +36,7 @@ type WizardStoreState = {
   catchUpStatus: CatchUpStatus;
   currentStep: Step;
   _network: 'algorand.mainnet' | 'voi.testnet';
+  nodeName: '';
   _port: number;
   stepStatus: Record<Step, Status>;
   windowIndex: number;
@@ -63,6 +64,7 @@ const store = flux.addStore('wizard', {
   catchUpStatus: CatchUpStatus.Unchecked,
   currentStep: Step.Check_Node_Running,
   _network: 'algorand.mainnet',
+  nodeName: '',
   _port: 4160,
   stepStatus: Object.entries(Step).reduce((stepStatus, [, value]) => {
     if (typeof value === 'string') {
@@ -374,6 +376,11 @@ store.register('wizard/setPort', async (_, port) => {
 store.register('wizard/setTelemetry', async (_, nodeName) => {
   await window.store.set('nodeName', nodeName);
   await window.goal.telemetry(nodeName);
+
+  return (state) =>
+    produce(state, (draft) => {
+      draft.nodeName = nodeName;
+    });
 });
 
 store.register(
@@ -401,9 +408,12 @@ store.register(
     produce(state, (draft) => void draft.buffers.stdout.push(data)),
 );
 
-// changing the network or port requires a node restart
+// changing the network, port, or telemetry requires a node restart
 // infraHash is a shortcut to check for that
-store.addSelector('infraHash', (state) => state._network + state._port);
+store.addSelector(
+  'infraHash',
+  (state) => state._network + state.nodeName + state._port,
+);
 
 store.addSelector('isMainWindow', (state) => state.windowIndex === 0);
 
