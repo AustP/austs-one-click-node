@@ -275,6 +275,32 @@ ipcMain.on('goal.stop', (event) => {
   );
 });
 
+ipcMain.on('goal.telemetry', (event, { nodeName }) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+  const dataDir = getDataDir(window.getNetwork());
+
+  let config = JSON.parse(
+    fs.readFileSync(path.join(dataDir, 'logging.config'), {
+      encoding: 'utf-8',
+    }),
+  );
+
+  config.Enable = nodeName !== '';
+  config.Name = nodeName === '' ? '' : `A1CN:${nodeName}`;
+
+  fs.writeFileSync(
+    path.join(dataDir, 'logging.config'),
+    JSON.stringify(config),
+    {
+      encoding: 'utf-8',
+    },
+  );
+
+  window.webContents.send('goal.telemetry');
+});
+
 ipcMain.on('goal.token', (event) => {
   const window = BrowserWindow.fromWebContents(
     event.sender,

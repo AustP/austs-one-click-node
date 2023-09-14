@@ -52,6 +52,7 @@ const createStore = () => {
   });
 
   store.set('network', store.get('network', DEFAULT_NETWORK));
+  store.set('nodeName', store.get('nodeName', ''));
   store.set('port', store.get('port', DEFAULT_PORT));
   store.set('startup', store.get('startup', false));
 };

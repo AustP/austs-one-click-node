@@ -85,6 +85,7 @@ const goal = {
   start: () => sendIPC('goal.start'),
   status: () => sendIPC('goal.status'),
   stop: () => sendIPC('goal.stop'),
+  telemetry: (nodeName: string) => sendIPC('goal.telemetry', { nodeName }),
   token: () => sendIPC('goal.token'),
 };
 
