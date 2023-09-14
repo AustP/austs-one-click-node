@@ -371,6 +371,11 @@ store.register('wizard/setPort', async (_, port) => {
     });
 });
 
+store.register('wizard/setTelemetry', async (_, nodeName) => {
+  await window.store.set('nodeName', nodeName);
+  await window.goal.telemetry(nodeName);
+});
+
 store.register(
   'wizard/setWindowIndex',
   (_, index) => (state) =>
