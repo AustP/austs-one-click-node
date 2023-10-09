@@ -1,6 +1,5 @@
 {
   "DNSBootstrapID": "<network>.voi.network",
   "EnableCatchupFromArchiveServers": true,
-  "GossipFanout": 8,
   "MaxCatchpointDownloadDuration": 43200000000000
 }
