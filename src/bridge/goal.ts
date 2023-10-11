@@ -56,51 +56,6 @@ const CONFIG_DIR = app.isPackaged
       'config',
     );
 
-const DATA_DIRS = {
-  'algorand.mainnet': path.join(
-    app.getPath('appData'),
-    productName,
-    'data',
-    'algorand.mainnet',
-  ),
-  'voi.testnet': path.join(
-    app.getPath('appData'),
-    productName,
-    'data',
-    'voi.testnet',
-  ),
-};
-
-function getDataDir(network: string) {
-  if (!(network in DATA_DIRS)) {
-    throw new Error(`Unknown network: ${network}`);
-  }
-
-  const dataDir = DATA_DIRS[network as keyof typeof DATA_DIRS];
-
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true, mode: 0o777 });
-
-    // we made it so multiple network data dirs can coexist
-    // v1.0.0 and below used to use the same data dir for all networks
-    // so we need to move the old data dir to the new one, if applicable
-    if (network === 'algorand.mainnet') {
-      const oldDataDir = path.join(
-        app.getPath('appData'),
-        productName,
-        'algod',
-        'data',
-      );
-
-      if (fs.existsSync(oldDataDir)) {
-        fs.renameSync(oldDataDir, dataDir);
-      }
-    }
-  }
-
-  return dataDir;
-}
-
 ipcMain.on('goal.addpartkey', (event, { account, firstValid, lastValid }) => {
   const window = BrowserWindow.fromWebContents(
     event.sender,
@@ -110,7 +65,7 @@ ipcMain.on('goal.addpartkey', (event, { account, firstValid, lastValid }) => {
     'account',
     'addpartkey',
     '-d',
-    getDataDir(window.network),
+    window.getDataDir(),
     '-a',
     account,
     '--roundFirstValid',
@@ -172,7 +127,7 @@ ipcMain.on('goal.catchup', (event, { catchpoint }) => {
     event.sender,
   )! as ModifiedBrowserWindow;
   exec(
-    `"${GOAL}" node catchup -d "${getDataDir(window.network)}" ${catchpoint}`,
+    `"${GOAL}" node catchup -d "${window.getDataDir()}" ${catchpoint}`,
     (err, stdout) => window.webContents.send('goal.catchup', err, stdout),
   );
 });
@@ -182,9 +137,7 @@ ipcMain.on('goal.deletepartkey', (event, { id }) => {
     event.sender,
   )! as ModifiedBrowserWindow;
   exec(
-    `"${GOAL}" account deletepartkey -d "${getDataDir(
-      window.network,
-    )}" --partkeyid ${id}`,
+    `"${GOAL}" account deletepartkey -d "${window.getDataDir()}" --partkeyid ${id}`,
     (err, stdout) => window.webContents.send('goal.deletepartkey', err, stdout),
   );
 });
@@ -193,23 +146,22 @@ ipcMain.on('goal.running', async (event) => {
   const window = BrowserWindow.fromWebContents(
     event.sender,
   )! as ModifiedBrowserWindow;
-  exec(
-    `"${GOAL}" node status -d "${getDataDir(window.network)}"`,
-    (err, stdout) =>
-      window.webContents.send(
-        'goal.running',
-        null,
-        stdout.includes('Last committed block:'),
-      ),
+  exec(`"${GOAL}" node status -d "${window.getDataDir()}"`, (err, stdout) =>
+    window.webContents.send(
+      'goal.running',
+      null,
+      stdout.includes('Last committed block:'),
+    ),
   );
 });
 
+let runningDataDirs = new Set<string>();
 ipcMain.on('goal.start', (event) => {
   const window = BrowserWindow.fromWebContents(
     event.sender,
   )! as ModifiedBrowserWindow;
   const network = window.network;
-  const dataDir = getDataDir(network);
+  const dataDir = window.getDataDir();
 
   if (!fs.existsSync(path.join(dataDir, 'config.json'))) {
     fs.copyFileSync(
@@ -251,15 +203,17 @@ ipcMain.on('goal.start', (event) => {
       window.webContents.send('goal.start', new Error(str));
     }
   });
+
+  child.on('exit', () => runningDataDirs.delete(network));
+  runningDataDirs.add(network);
 });
 
 ipcMain.on('goal.status', (event) => {
   const window = BrowserWindow.fromWebContents(
     event.sender,
   )! as ModifiedBrowserWindow;
-  exec(
-    `"${GOAL}" node status -d "${getDataDir(window.network)}"`,
-    (err, stdout) => window.webContents.send('goal.status', err, stdout),
+  exec(`"${GOAL}" node status -d "${window.getDataDir()}"`, (err, stdout) =>
+    window.webContents.send('goal.status', err, stdout),
   );
 });
 
@@ -267,9 +221,8 @@ ipcMain.on('goal.stop', (event) => {
   const window = BrowserWindow.fromWebContents(
     event.sender,
   )! as ModifiedBrowserWindow;
-  exec(
-    `"${GOAL}" node stop -d "${getDataDir(window.network)}"`,
-    (err, stdout) => window.webContents.send('goal.stop', err, stdout),
+  exec(`"${GOAL}" node stop -d "${window.getDataDir()}"`, (err, stdout) =>
+    window.webContents.send('goal.stop', err, stdout),
   );
 });
 
@@ -277,7 +230,7 @@ ipcMain.on('goal.telemetry', (event, { nodeName }) => {
   const window = BrowserWindow.fromWebContents(
     event.sender,
   )! as ModifiedBrowserWindow;
-  const dataDir = getDataDir(window.network);
+  const dataDir = window.getDataDir();
 
   let config = JSON.parse(
     fs.readFileSync(path.join(dataDir, 'logging.config'), {
@@ -309,7 +262,7 @@ ipcMain.on('goal.token', (event) => {
 
   try {
     stdout = fs.readFileSync(
-      path.join(getDataDir(window.network), 'algod.admin.token'),
+      path.join(window.getDataDir(), 'algod.admin.token'),
       {
         encoding: 'utf-8',
       },
@@ -322,8 +275,8 @@ ipcMain.on('goal.token', (event) => {
 });
 
 app.on('will-quit', () => {
-  for (const network of Object.keys(DATA_DIRS)) {
-    const dataDir = getDataDir(network);
-    exec(`"${GOAL}" node stop -d "${dataDir}"`);
-  }
+  // stop all the nodes in runningDataDirs
+  runningDataDirs.forEach((dataDir) =>
+    exec(`"${GOAL}" node stop -d "${dataDir}"`),
+  );
 });

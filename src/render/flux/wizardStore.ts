@@ -35,6 +35,7 @@ type WizardStoreState = {
   };
   catchUpStatus: CatchUpStatus;
   currentStep: Step;
+  dataDir: '';
   network: 'algorand.mainnet' | 'voi.testnet';
   nodeName: '';
   port: number;
@@ -59,6 +60,7 @@ const store = flux.addStore('wizard', {
   },
   catchUpStatus: CatchUpStatus.Unchecked,
   currentStep: Step.Check_Node_Running,
+  dataDir: '',
   network: 'algorand.mainnet',
   nodeName: '',
   port: 4160,
@@ -78,11 +80,12 @@ const store = flux.addStore('wizard', {
 }) as any as Store<WizardStoreState>;
 
 store.register('wizard/loadConfig', async () => {
-  const { network, port, store } = await window.electron.loadConfig();
+  const { dataDir, network, port, store } = await window.electron.loadConfig();
   window.store = store;
 
   return (state) =>
     produce(state, (draft) => {
+      draft.dataDir = dataDir;
       draft.network = network as any;
       draft.port = port;
     });
@@ -336,6 +339,20 @@ store.register(
       }
     }),
 );
+
+store.register('wizard/setDataDir', async (_, dataDir) => {
+  if (nodeAdded) {
+    removeNode(`http://localhost:${store.selectState('port')}`);
+    nodeAdded = false;
+  }
+
+  await window.store.set('dataDir', dataDir);
+
+  return (state) =>
+    produce(state, (draft) => {
+      draft.dataDir = dataDir;
+    });
+});
 
 store.register('wizard/setNetwork', async (_, network) => {
   if (nodeAdded) {

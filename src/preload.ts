@@ -57,8 +57,9 @@ function sendIPC<T = any>(
 const electron = {
   isDev: () => sendIPC('isDev'),
   loadConfig: async () => {
-    const { network, port } = await sendIPC('loadConfig');
+    const { dataDir, network, port } = await sendIPC('loadConfig');
     return {
+      dataDir,
       network,
       port,
       store: createStoreBindings(network),

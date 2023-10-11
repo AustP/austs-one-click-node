@@ -10,18 +10,20 @@ import { parseNumber } from '@/render/utils';
 
 import Flush from './Flush';
 
+let initialDataDir = '';
 export default function Settings({ className = '' }: { className?: string }) {
+  const [dataDir, setDataDir] = useState('');
   const [network, setNetwork] = useState('');
   const [nodeName, setNodeName] = useState('');
   const [port, setPort] = useState('');
   const [startup, setStartup] = useState(false);
+  const [settingDataDir, setSettingDataDir] = useState(false);
   const [settingNetwork, setSettingNetwork] = useState(false);
   const [settingPort, setSettingPort] = useState(false);
   const [settingTelemetry, setSettingTelemetry] = useState(false);
   const [telemetryEnabled, setTelemetryEnabled] = useState(false);
 
   const networks = flux.wizard.selectState('networks');
-
   const otherNetwork = networks.find(
     (n) => n.value !== flux.wizard.selectState('network'),
   )!;
@@ -30,11 +32,15 @@ export default function Settings({ className = '' }: { className?: string }) {
 
   useEffect(() => {
     (async () => {
+      const dataDir = (await window.store.get('dataDir')) as string;
       const network = flux.wizard.selectState('network');
       const nodeName = (await window.store.get('nodeName')) as string;
       const port = (await window.store.get('port')) as number;
       const startup = (await window.store.get('startup')) as boolean;
 
+      initialDataDir = dataDir;
+
+      setDataDir(dataDir);
       setNetwork(network);
       setNodeName(nodeName);
       setPort(port.toString());
@@ -45,9 +51,13 @@ export default function Settings({ className = '' }: { className?: string }) {
 
   return (
     <Flush className={`w-full ${className}`}>
-      <div className="font-light mb-6 text-xl">Settings</div>
+      <div className="font-light text-xl">Settings</div>
+      <div className="mt-2 text-slate-500 text-sm">
+        Note: Changing most settings will cause the node to restart.
+      </div>
       <Checkbox
         checked={startup}
+        className="mt-8"
         label="Start Node On Startup"
         onChange={async (checked) => {
           await window.electron.setStartup(checked);
@@ -55,9 +65,7 @@ export default function Settings({ className = '' }: { className?: string }) {
         }}
       />
       <div className="mt-4">
-        <div className="mb-1 text-slate-500 text-sm">
-          Port (Changing this setting will cause the node to restart)
-        </div>
+        <div className="mb-1 text-slate-500 text-sm">Port</div>
         <div className="flex items-center">
           <TextInput
             className="w-24"
@@ -94,9 +102,7 @@ export default function Settings({ className = '' }: { className?: string }) {
         </div>
       </div>
       <div className="mt-4">
-        <div className="mb-1 text-slate-500 text-sm">
-          Network (Changing this setting will cause the node to restart)
-        </div>
+        <div className="mb-1 text-slate-500 text-sm">Network</div>
         <div className="flex items-center">
           <Select
             items={networks}
@@ -130,21 +136,7 @@ export default function Settings({ className = '' }: { className?: string }) {
         </div>
       </div>
       <div className="mt-4">
-        <div className="mb-1 text-slate-500 text-sm">
-          Want to run a node for {otherNetwork.label} as well?
-        </div>
-        <Button
-          onClick={async () => {
-            window.electron.newWindow(otherNetwork.value);
-          }}
-        >
-          Start {otherNetwork.label} Node
-        </Button>
-      </div>
-      <div className="mt-4">
-        <div className="mb-1 text-slate-500 text-sm">
-          Telemetry (Changing this setting will cause the node to restart)
-        </div>
+        <div className="mb-1 text-slate-500 text-sm">Telemetry</div>
         <div className="flex items-center">
           <TextInput
             className="w-72"
@@ -182,6 +174,50 @@ export default function Settings({ className = '' }: { className?: string }) {
             )}
           </Button>
         </div>
+      </div>
+      <div className="mt-4">
+        <div className="mb-1 text-slate-500 text-sm">Data Directory</div>
+        <div className="flex items-center">
+          <TextInput
+            className="w-full"
+            onChange={(value) => setDataDir(value)}
+            value={dataDir}
+          />
+          <Button
+            className="inline-flex items-center ml-2 shrink-0"
+            disabled={dataDir === initialDataDir}
+            onClick={async () => {
+              setSettingDataDir(true);
+
+              await flux.dispatch('wizard/stopNode');
+              await flux.dispatch('wizard/setDataDir', dataDir);
+              flux.dispatch('wizard/checkNodeRunning');
+
+              setSettingDataDir(false);
+            }}
+          >
+            {settingDataDir ? (
+              <>
+                <Spinner className="!h-6 mr-2 !w-4" />
+                <div>Setting...</div>
+              </>
+            ) : (
+              'Set Data Directory'
+            )}
+          </Button>
+        </div>
+      </div>
+      <div className="mt-8">
+        <div className="mb-1 text-slate-500 text-sm">
+          Want to run a node for {otherNetwork.label} as well?
+        </div>
+        <Button
+          onClick={async () => {
+            window.electron.newWindow(otherNetwork.value);
+          }}
+        >
+          Start {otherNetwork.label} Node
+        </Button>
       </div>
     </Flush>
   );
