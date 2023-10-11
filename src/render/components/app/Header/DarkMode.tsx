@@ -1,3 +1,4 @@
+import flux from '@aust/react-flux';
 import { useEffect, useState } from 'react';
 
 import Circle from '@components/icons/Circle';
@@ -5,6 +6,8 @@ import Moon from '@components/icons/Moon';
 import Sun from '@components/icons/Sun';
 
 export default function DarkMode({ className = '' }: { className?: string }) {
+  const infraHash = flux.wizard.useState('infraHash');
+
   const [darkMode, setDarkMode] = useState(false);
   useEffect(() => {
     (async () => {
@@ -12,7 +15,15 @@ export default function DarkMode({ className = '' }: { className?: string }) {
         '(prefers-color-scheme: dark)',
       ).matches;
 
-      const darkMode = await window.store.get('darkMode', prefersDarkMode);
+      // wait for window.store to get initialized
+      while (window.store === undefined) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
+      const darkMode = (await window.store.get(
+        'darkMode',
+        prefersDarkMode,
+      )) as boolean;
       setDarkMode(darkMode);
 
       if (darkMode) {
@@ -21,7 +32,7 @@ export default function DarkMode({ className = '' }: { className?: string }) {
         document.body.classList.remove('dark');
       }
     })();
-  }, [setDarkMode]);
+  }, [infraHash, setDarkMode]);
 
   return (
     <div

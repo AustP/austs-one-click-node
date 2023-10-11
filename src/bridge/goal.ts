@@ -110,7 +110,7 @@ ipcMain.on('goal.addpartkey', (event, { account, firstValid, lastValid }) => {
     'account',
     'addpartkey',
     '-d',
-    getDataDir(window.getNetwork()),
+    getDataDir(window.network),
     '-a',
     account,
     '--roundFirstValid',
@@ -146,7 +146,7 @@ ipcMain.on('goal.catchpoint', async (event) => {
   let err = null;
   let stdout = null;
 
-  const network = window.getNetwork();
+  const network = window.network;
   try {
     if (network === 'voi.testnet') {
       const response = await fetch(
@@ -172,9 +172,7 @@ ipcMain.on('goal.catchup', (event, { catchpoint }) => {
     event.sender,
   )! as ModifiedBrowserWindow;
   exec(
-    `"${GOAL}" node catchup -d "${getDataDir(
-      window.getNetwork(),
-    )}" ${catchpoint}`,
+    `"${GOAL}" node catchup -d "${getDataDir(window.network)}" ${catchpoint}`,
     (err, stdout) => window.webContents.send('goal.catchup', err, stdout),
   );
 });
@@ -185,7 +183,7 @@ ipcMain.on('goal.deletepartkey', (event, { id }) => {
   )! as ModifiedBrowserWindow;
   exec(
     `"${GOAL}" account deletepartkey -d "${getDataDir(
-      window.getNetwork(),
+      window.network,
     )}" --partkeyid ${id}`,
     (err, stdout) => window.webContents.send('goal.deletepartkey', err, stdout),
   );
@@ -196,7 +194,7 @@ ipcMain.on('goal.running', async (event) => {
     event.sender,
   )! as ModifiedBrowserWindow;
   exec(
-    `"${GOAL}" node status -d "${getDataDir(window.getNetwork())}"`,
+    `"${GOAL}" node status -d "${getDataDir(window.network)}"`,
     (err, stdout) =>
       window.webContents.send(
         'goal.running',
@@ -210,7 +208,7 @@ ipcMain.on('goal.start', (event) => {
   const window = BrowserWindow.fromWebContents(
     event.sender,
   )! as ModifiedBrowserWindow;
-  const network = window.getNetwork();
+  const network = window.network;
   const dataDir = getDataDir(network);
 
   if (!fs.existsSync(path.join(dataDir, 'config.json'))) {
@@ -234,7 +232,7 @@ ipcMain.on('goal.start', (event) => {
     '-d',
     dataDir,
     '-l',
-    `0.0.0.0:${window.getPort()}`,
+    `0.0.0.0:${window.store.get('port')}`,
   ]);
   window.on('closed', () => exec(`"${GOAL}" node stop -d "${dataDir}"`));
 
@@ -260,7 +258,7 @@ ipcMain.on('goal.status', (event) => {
     event.sender,
   )! as ModifiedBrowserWindow;
   exec(
-    `"${GOAL}" node status -d "${getDataDir(window.getNetwork())}"`,
+    `"${GOAL}" node status -d "${getDataDir(window.network)}"`,
     (err, stdout) => window.webContents.send('goal.status', err, stdout),
   );
 });
@@ -270,7 +268,7 @@ ipcMain.on('goal.stop', (event) => {
     event.sender,
   )! as ModifiedBrowserWindow;
   exec(
-    `"${GOAL}" node stop -d "${getDataDir(window.getNetwork())}"`,
+    `"${GOAL}" node stop -d "${getDataDir(window.network)}"`,
     (err, stdout) => window.webContents.send('goal.stop', err, stdout),
   );
 });
@@ -279,7 +277,7 @@ ipcMain.on('goal.telemetry', (event, { nodeName }) => {
   const window = BrowserWindow.fromWebContents(
     event.sender,
   )! as ModifiedBrowserWindow;
-  const dataDir = getDataDir(window.getNetwork());
+  const dataDir = getDataDir(window.network);
 
   let config = JSON.parse(
     fs.readFileSync(path.join(dataDir, 'logging.config'), {
@@ -311,7 +309,7 @@ ipcMain.on('goal.token', (event) => {
 
   try {
     stdout = fs.readFileSync(
-      path.join(getDataDir(window.getNetwork()), 'algod.admin.token'),
+      path.join(getDataDir(window.network), 'algod.admin.token'),
       {
         encoding: 'utf-8',
       },
