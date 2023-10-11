@@ -18,9 +18,8 @@ declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 export type ModifiedBrowserWindow = BrowserWindow & {
-  getNetwork: () => string;
-  getPort: () => number;
-  windowIndex?: number;
+  network: string;
+  store: Store;
 };
 
 // Squirrel.Windows will spawn the app multiple times while installing/updating
@@ -45,20 +44,79 @@ if (!firstInstance) {
   app.quit();
 }
 
-export let store: Store;
-const createStore = () => {
-  store = new Store({
-    configName: 'config',
-  });
+let storeMap: Record<string, Store> = {};
+const loadStore = (network: string) => {
+  if (!(network in storeMap)) {
+    storeMap[network] = new Store({
+      configName: network,
+    });
+  }
 
-  store.set('network', store.get('network', DEFAULT_NETWORK));
+  const store = storeMap[network];
+  store.set('accounts', store.get('accounts', {}));
+  store.set('darkMode', store.get('darkMode', false));
   store.set('nodeName', store.get('nodeName', ''));
   store.set('port', store.get('port', DEFAULT_PORT));
   store.set('startup', store.get('startup', false));
+
+  return store;
 };
 
-let windows: ModifiedBrowserWindow[] = [];
-const createWindow = () => {
+let mainStore: Store;
+const createMainStore = () => {
+  mainStore = new Store({
+    configName: 'main',
+  });
+
+  mainStore.set('startupNetworks', mainStore.get('startupNetworks', []));
+
+  // need to do some migrations for v1.4.0
+  const hasMigrated_v140 = mainStore.get('hasMigrated_v140', false);
+  if (!hasMigrated_v140) {
+    mainStore.set('hasMigrated_v140', true);
+
+    // check to see if the old config exists
+    const store = new Store({
+      configName: 'config',
+    });
+
+    const network = store.get('network') as string;
+    if (network) {
+      // the old config exists, so we need to migrate
+      const accounts = store.get('accounts', {});
+      const darkMode = store.get('darkMode', false);
+      const nodeName = store.get('nodeName');
+      const port = store.get('port') as number;
+      const startup = store.get('startup');
+
+      const firstNetworkStore = loadStore(network);
+      firstNetworkStore.set('accounts', accounts);
+      firstNetworkStore.set('darkMode', darkMode);
+      firstNetworkStore.set('nodeName', nodeName);
+      firstNetworkStore.set('port', port);
+      firstNetworkStore.set('startup', startup);
+      if (startup) {
+        mainStore.set('startupNetworks', [network]);
+      }
+
+      const otherNetwork = NETWORKS.find((n) => n !== network);
+      const secondNetworkStore = loadStore(otherNetwork!);
+      firstNetworkStore.set('accounts', accounts);
+      firstNetworkStore.set('darkMode', darkMode);
+      secondNetworkStore.set('nodeName', '');
+      secondNetworkStore.set('port', port + 1);
+      secondNetworkStore.set('startup', false);
+    }
+  }
+};
+
+let runningNetworks: string[] = [];
+const createWindow = (network: string) => {
+  // make sure we only run one instance of each network
+  if (runningNetworks.includes(network)) {
+    return;
+  }
+
   const suffix =
     process.platform === 'darwin'
       ? 'icns'
@@ -102,39 +160,12 @@ const createWindow = () => {
     });
   });
 
-  // this code is duplicated in the wizardStore rather than passing
-  // these values back and forth with every IPC call
-  window.getNetwork = () => {
-    const network = store.get('network');
-    if (window.windowIndex === 0) {
-      return network as string;
-    } else {
-      // if we're not the main window, we need to use the other network
-      return NETWORKS.find((n) => n !== network)!;
-    }
-  };
-  window.getPort = () => (store.get('port') as number) + window.windowIndex!;
+  window.network = network;
+  window.store = loadStore(network);
 
-  // keep track of the windows in the order that they were opened
-  // we send this index to the renderer so it knows if it's the main
-  // window (index 0) or not
-  windows.push(window);
-  windows.forEach((win, index) => {
-    win.windowIndex = index;
-    win.webContents.send('window.index', {
-      index,
-    });
-  });
-
-  // when the window is closed, remove the reference to it
+  runningNetworks.push(network);
   window.on('closed', () => {
-    windows = windows.filter((win) => win !== window);
-    windows.forEach((win, index) => {
-      win.windowIndex = index;
-      win.webContents.send('window.index', {
-        index,
-      });
-    });
+    runningNetworks = runningNetworks.filter((n) => n !== network);
   });
 };
 
@@ -142,8 +173,18 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
-  createStore();
-  createWindow();
+  createMainStore();
+
+  // create a window for each network in the startup list
+  const startupNetworks = mainStore.get('startupNetworks') as string[];
+  for (const network of startupNetworks) {
+    createWindow(network);
+  }
+
+  // make sure at least the default window pops up
+  if (startupNetworks.length === 0) {
+    createWindow(DEFAULT_NETWORK);
+  }
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -159,7 +200,9 @@ app.on('activate', () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
+    createWindow(
+      (mainStore.get('startupNetworks') as string[])[0] || DEFAULT_NETWORK,
+    );
   }
 });
 
@@ -177,6 +220,17 @@ app.on('web-contents-created', (_, contents) => {
 import './bridge/goal';
 
 ipcMain.on('isDev', (event) => event.sender.send('isDev', null, isDev));
+
+ipcMain.on('loadConfig', (event) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+
+  event.sender.send('loadConfig', null, {
+    network: window.network,
+    port: window.store.get('port'),
+  });
+});
 
 ipcMain.on('maximize', (event) => {
   BrowserWindow.fromWebContents(event.sender)?.maximize();
@@ -201,8 +255,8 @@ ipcMain.on('minimize', (event) => {
   event.sender.send('minimize');
 });
 
-ipcMain.on('newWindow', (event) => {
-  createWindow();
+ipcMain.on('newWindow', (event, { network }) => {
+  createWindow(network);
   event.sender.send('newWindow');
 });
 
@@ -210,28 +264,59 @@ ipcMain.on('platform', (event) => {
   event.sender.send('platform', null, process.platform);
 });
 
-ipcMain.on('refresh', (event) => {
-  createWindow();
-  BrowserWindow.fromWebContents(event.sender)?.close();
-});
-
 ipcMain.on('quit', (event) => {
   BrowserWindow.fromWebContents(event.sender)?.close();
 });
 
+ipcMain.on('refresh', (event) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+
+  window.close();
+  createWindow(window.network);
+});
+
 ipcMain.on('setStartup', (event, { startup }) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+
+  let startupNetworks = mainStore.get('startupNetworks') as string[];
+  if (startup && !startupNetworks.includes(window.network)) {
+    startupNetworks.push(window.network);
+    mainStore.set('startupNetworks', startupNetworks);
+  }
+  if (!startup && startupNetworks.includes(window.network)) {
+    startupNetworks = startupNetworks.filter((n) => n !== window.network);
+    mainStore.set('startupNetworks', startupNetworks);
+  }
+
+  // even though we specify .exe for windows, the args that use them
+  // are for windows only, so the settings still work for macos/linux
   const appFolder = path.dirname(process.execPath);
   const updateExe = path.resolve(appFolder, '..', 'Update.exe');
   const exeName = path.basename(process.execPath);
 
   app.setLoginItemSettings({
     args: ['--processStart', `"${exeName}"`],
-    openAtLogin: startup,
+    openAtLogin: startupNetworks.length > 0,
     path: updateExe,
   });
 
-  store.set('startup', startup);
+  window.store.set('startup', startup);
   event.sender.send('setStartup');
+});
+
+ipcMain.on('swapNetwork', (event, { network }) => {
+  const window = BrowserWindow.fromWebContents(
+    event.sender,
+  )! as ModifiedBrowserWindow;
+
+  window.network = network;
+  window.store = loadStore(network);
+
+  event.sender.send('swapNetwork');
 });
 
 ipcMain.on('unmaximize', (event) => {

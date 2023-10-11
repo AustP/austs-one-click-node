@@ -55,13 +55,24 @@ function sendIPC<T = any>(
 }
 
 const electron = {
+  isDev: () => sendIPC('isDev'),
+  loadConfig: async () => {
+    const { network, port } = await sendIPC('loadConfig');
+    return {
+      network,
+      port,
+      store: createStoreBindings(network),
+    };
+  },
   maximize: () => sendIPC('maximize'),
   maximized: () => sendIPC('maximized'),
   minimize: () => sendIPC('minimize'),
+  newWindow: (network: string) => sendIPC('newWindow', { network }),
   platform: () => sendIPC('platform'),
-  refresh: () => sendIPC('refresh'),
   quit: () => sendIPC('quit'),
+  refresh: () => sendIPC('refresh'),
   setStartup: (startup: boolean) => sendIPC('setStartup', { startup }),
+  swapNetwork: (network: string) => sendIPC('swapNetwork', { network }),
   unmaximize: () => sendIPC('unmaximize'),
 };
 
@@ -89,40 +100,13 @@ const goal = {
   token: () => sendIPC('goal.token'),
 };
 
-let windowIndex: number | undefined;
-let windowIndexCallback: (index: number) => void;
-
-ipcRenderer.on('window.index', (_, { index }) => {
-  windowIndex = index;
-  if (windowIndexCallback) {
-    windowIndexCallback(index);
-  }
-});
-
-const store = createStoreBindings('config');
-
 contextBridge.exposeInMainWorld('electron', electron);
-contextBridge.exposeInMainWorld('isDev', () => sendIPC('isDev'));
 contextBridge.exposeInMainWorld('goal', goal);
-contextBridge.exposeInMainWorld('newWindow', () => sendIPC('newWindow'));
-contextBridge.exposeInMainWorld(
-  'setIndexCallback',
-  (callback: typeof windowIndexCallback) => {
-    windowIndexCallback = callback;
-    if (windowIndex !== undefined) {
-      callback(windowIndex);
-    }
-  },
-);
-contextBridge.exposeInMainWorld('store', store);
 
 declare global {
   interface Window {
     electron: typeof electron;
-    isDev: () => Promise<boolean>;
     goal: typeof goal;
-    newWindow: () => void;
-    setIndexCallback: (callback: typeof windowIndexCallback) => void;
-    store: typeof store;
+    store: ReturnType<typeof createStoreBindings>;
   }
 }

@@ -35,18 +35,14 @@ type WizardStoreState = {
   };
   catchUpStatus: CatchUpStatus;
   currentStep: Step;
-  _network: 'algorand.mainnet' | 'voi.testnet';
+  network: 'algorand.mainnet' | 'voi.testnet';
   nodeName: '';
-  _port: number;
+  port: number;
   stepStatus: Record<Step, Status>;
-  windowIndex: number;
 
   // selectors
   infraHash: string;
-  isMainWindow: boolean;
-  network: string;
   networks: { label: string; value: string }[];
-  port: number;
   running: boolean;
 };
 
@@ -63,9 +59,9 @@ const store = flux.addStore('wizard', {
   },
   catchUpStatus: CatchUpStatus.Unchecked,
   currentStep: Step.Check_Node_Running,
-  _network: 'algorand.mainnet',
+  network: 'algorand.mainnet',
   nodeName: '',
-  _port: 4160,
+  port: 4160,
   stepStatus: Object.entries(Step).reduce((stepStatus, [, value]) => {
     if (typeof value === 'string') {
       return stepStatus;
@@ -79,20 +75,16 @@ const store = flux.addStore('wizard', {
     stepStatus[value] = Status.Failure;
     return stepStatus;
   }, {} as Record<Step, Status>),
-  windowIndex: 0,
 }) as any as Store<WizardStoreState>;
 
 store.register('wizard/loadConfig', async () => {
-  window.setIndexCallback((index) =>
-    flux.dispatch('wizard/setWindowIndex', index),
-  );
+  const { network, port, store } = await window.electron.loadConfig();
+  window.store = store;
 
-  const network = await window.store.get('network');
-  const port = await window.store.get('port');
   return (state) =>
     produce(state, (draft) => {
-      draft._network = network;
-      draft._port = port;
+      draft.network = network as any;
+      draft.port = port;
     });
 });
 
@@ -351,12 +343,8 @@ store.register('wizard/setNetwork', async (_, network) => {
     nodeAdded = false;
   }
 
-  await window.store.set('network', network);
-
-  return (state) =>
-    produce(state, (draft) => {
-      draft._network = network;
-    });
+  await window.electron.swapNetwork(network);
+  await flux.dispatch('wizard/loadConfig');
 });
 
 store.register('wizard/setPort', async (_, port) => {
@@ -369,7 +357,7 @@ store.register('wizard/setPort', async (_, port) => {
 
   return (state) =>
     produce(state, (draft) => {
-      draft._port = port;
+      draft.port = port;
     });
 });
 
@@ -382,14 +370,6 @@ store.register('wizard/setTelemetry', async (_, nodeName) => {
       draft.nodeName = nodeName;
     });
 });
-
-store.register(
-  'wizard/setWindowIndex',
-  (_, index) => (state) =>
-    produce(state, (draft) => {
-      draft.windowIndex = index;
-    }),
-);
 
 store.register('wizard/stopNode', async () => {
   await window.goal.stop();
@@ -412,30 +392,13 @@ store.register(
 // infraHash is a shortcut to check for that
 store.addSelector(
   'infraHash',
-  (state) => state._network + state.nodeName + state._port,
+  (state) => state.network + state.nodeName + state.port,
 );
-
-store.addSelector('isMainWindow', (state) => state.windowIndex === 0);
 
 store.addSelector('networks', () => [
   { label: 'Algorand MainNet', value: 'algorand.mainnet' },
   { label: 'Voi TestNet', value: 'voi.testnet' },
 ]);
-
-// this code is duplicated in main rather than passing
-// these values back and forth with every IPC call
-store.addSelector('network', (state) => {
-  const isMainWindow = store.selectState('isMainWindow');
-  if (isMainWindow) {
-    return state._network;
-  } else {
-    // if we're not the main window, we need to use the other network
-    return store
-      .selectState('networks')
-      .find((network) => network.value !== state._network)!.value;
-  }
-});
-store.addSelector('port', (state) => state._port + state.windowIndex);
 
 store.addSelector(
   'running',
