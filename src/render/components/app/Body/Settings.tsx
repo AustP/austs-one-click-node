@@ -47,6 +47,19 @@ export default function Settings({ className = '' }: { className?: string }) {
       setStartup(startup);
       setTelemetryEnabled(nodeName !== '');
     })();
+
+    // if a bad data directory is entered (i.e. permissions issue)
+    // electron will reset the dataDir in the store to the last known good one
+    // this code will detect that and update the UI to match
+    let interval = window.setInterval(async () => {
+      const dataDir = (await window.store.get('dataDir')) as string;
+      if (dataDir !== initialDataDir) {
+        flux.dispatch('wizard/setDataDir', dataDir);
+        window.clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => window.clearInterval(interval);
   }, [infraHash]);
 
   return (

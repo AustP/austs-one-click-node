@@ -58,10 +58,8 @@ const loadStore = (network: string) => {
   store.set('darkMode', store.get('darkMode', false));
   store.set(
     'dataDir',
-    store.get(
-      'dataDir',
+    store.get('dataDir') ||
       path.join(app.getPath('appData'), productName, 'data', network),
-    ),
   );
   store.set('nodeName', store.get('nodeName', ''));
   store.set('port', store.get('port', DEFAULT_PORT));
@@ -173,20 +171,33 @@ const createWindow = (network: string) => {
     let dataDir = window.store.get('dataDir') as string;
     if (dataDir === '') {
       dataDir = path.join(app.getPath('appData'), productName, 'data', network);
+      window.store.set('dataDir', dataDir);
     }
 
-    if (
-      lastDataDir !== undefined &&
-      lastDataDir !== dataDir &&
-      !fs.existsSync(dataDir)
-    ) {
+    if (lastDataDir !== undefined && lastDataDir !== dataDir) {
       // this happens when the user changes the data dir in the settings
       // we will just move the old data directory to keep keys, sync, etc.
       try {
-        fs.mkdirSync(dataDir, { recursive: true, mode: 0o777 });
-        fs.renameSync(lastDataDir, dataDir);
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true, mode: 0o777 });
+        }
+
+        if (fs.existsSync(lastDataDir)) {
+          try {
+            // try to rename the old directory
+            fs.renameSync(lastDataDir, dataDir);
+          } catch (err) {
+            try {
+              // try copying the old directory / deleting it
+              fs.copyFileSync(lastDataDir, dataDir);
+              fs.rmdirSync(lastDataDir, { recursive: true });
+            } catch (err) {
+              // just start from scratch in the new directory
+            }
+          }
+        }
       } catch (err) {
-        // undo the action if it fails
+        // if we can't create the new directory, we have to revert back
         window.store.set('dataDir', lastDataDir);
         return lastDataDir;
       }

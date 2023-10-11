@@ -405,11 +405,11 @@ store.register(
     produce(state, (draft) => void draft.buffers.stdout.push(data)),
 );
 
-// changing the network, port, or telemetry requires a node restart
+// changing the network, port, telemetry, or dataDir requires a node restart
 // infraHash is a shortcut to check for that
 store.addSelector(
   'infraHash',
-  (state) => state.network + state.nodeName + state.port,
+  (state) => state.network + state.nodeName + state.port + state.dataDir,
 );
 
 store.addSelector('networks', () => [
