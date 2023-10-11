@@ -1,7 +1,7 @@
 {
   "name": "austs-one-click-node",
   "productName": "Austs One-Click Node",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "author": "Aust",
   "description": "An easy to use interface to run an Algorand or Voi consensus node.",
   "main": ".webpack/main",
