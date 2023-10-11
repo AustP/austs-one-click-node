@@ -18,6 +18,7 @@ declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 export type ModifiedBrowserWindow = BrowserWindow & {
+  getDataDir: () => string;
   network: string;
   store: Store;
 };
@@ -55,6 +56,13 @@ const loadStore = (network: string) => {
   const store = storeMap[network];
   store.set('accounts', store.get('accounts', {}));
   store.set('darkMode', store.get('darkMode', false));
+  store.set(
+    'dataDir',
+    store.get(
+      'dataDir',
+      path.join(app.getPath('appData'), productName, 'data', network),
+    ),
+  );
   store.set('nodeName', store.get('nodeName', ''));
   store.set('port', store.get('port', DEFAULT_PORT));
   store.set('startup', store.get('startup', false));
@@ -160,6 +168,52 @@ const createWindow = (network: string) => {
     });
   });
 
+  let lastDataDir: string | undefined;
+  window.getDataDir = () => {
+    let dataDir = window.store.get('dataDir') as string;
+    if (dataDir === '') {
+      dataDir = path.join(app.getPath('appData'), productName, 'data', network);
+    }
+
+    if (
+      lastDataDir !== undefined &&
+      lastDataDir !== dataDir &&
+      !fs.existsSync(dataDir)
+    ) {
+      // this happens when the user changes the data dir in the settings
+      // we will just move the old data directory to keep keys, sync, etc.
+      try {
+        fs.mkdirSync(dataDir, { recursive: true, mode: 0o777 });
+        fs.renameSync(lastDataDir, dataDir);
+      } catch (err) {
+        // undo the action if it fails
+        window.store.set('dataDir', lastDataDir);
+        return lastDataDir;
+      }
+    } else if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true, mode: 0o777 });
+
+      // we made it so multiple network data dirs can coexist
+      // v1.0.0 and below used to use the same data dir for all networks
+      // so we need to move the old data dir to the new one, if applicable
+      if (dataDir.endsWith('algorand.mainnet')) {
+        const oldDataDir = path.join(
+          app.getPath('appData'),
+          productName,
+          'algod',
+          'data',
+        );
+
+        if (fs.existsSync(oldDataDir)) {
+          fs.renameSync(oldDataDir, dataDir);
+        }
+      }
+    }
+
+    lastDataDir = dataDir;
+    return dataDir;
+  };
+
   window.network = network;
   window.store = loadStore(network);
 
@@ -227,6 +281,7 @@ ipcMain.on('loadConfig', (event) => {
   )! as ModifiedBrowserWindow;
 
   event.sender.send('loadConfig', null, {
+    dataDir: window.store.get('dataDir'),
     network: window.network,
     port: window.store.get('port'),
   });
