@@ -102,7 +102,7 @@ export default function StepViewer({
             >
               <div>
                 The node could not be synced. Please make sure you are connected
-                to the internet and have at least 1GB of free hard drive space.
+                to the internet and have at least 20GB of free hard drive space.
               </div>
               <Button
                 className="mt-4 w-fit"
