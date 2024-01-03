@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 import Button from '@components/shared/Button';
 import Checkbox from '@components/shared/Checkbox';
+import CopySnippet from '@components/shared/CopySnippet';
 import Select from '@components/shared/Select';
 import Spinner from '@components/shared/Spinner';
 import TextInput from '@components/shared/TextInput';
@@ -22,6 +23,7 @@ export default function Settings({ className = '' }: { className?: string }) {
   const [settingPort, setSettingPort] = useState(false);
   const [settingTelemetry, setSettingTelemetry] = useState(false);
   const [telemetryEnabled, setTelemetryEnabled] = useState(false);
+  const [token, setToken] = useState('');
 
   const networks = flux.wizard.selectState('networks');
   const otherNetwork = networks.find(
@@ -37,6 +39,7 @@ export default function Settings({ className = '' }: { className?: string }) {
       const nodeName = (await window.store.get('nodeName')) as string;
       const port = (await window.store.get('port')) as number;
       const startup = (await window.store.get('startup')) as boolean;
+      const token = (await window.goal.token()) as string;
 
       initialDataDir = dataDir;
 
@@ -46,6 +49,7 @@ export default function Settings({ className = '' }: { className?: string }) {
       setPort(port.toString());
       setStartup(startup);
       setTelemetryEnabled(nodeName !== '');
+      setToken(token);
     })();
 
     // if a bad data directory is entered (i.e. permissions issue)
@@ -65,12 +69,12 @@ export default function Settings({ className = '' }: { className?: string }) {
   return (
     <Flush className={`w-full ${className}`}>
       <div className="font-light text-xl">Settings</div>
-      <div className="mt-2 text-slate-500 text-sm">
+      <div className="text-slate-500 text-sm">
         Note: Changing most settings will cause the node to restart.
       </div>
       <Checkbox
         checked={startup}
-        className="mt-8"
+        className="mt-6"
         label="Start Node On Startup"
         onChange={async (checked) => {
           await window.electron.setStartup(checked);
@@ -220,7 +224,11 @@ export default function Settings({ className = '' }: { className?: string }) {
           </Button>
         </div>
       </div>
-      <div className="mt-8">
+      <div className="mt-4">
+        <div className="mb-1 text-slate-500 text-sm">Token</div>
+        <CopySnippet>{token}</CopySnippet>
+      </div>
+      <div className="mt-6">
         <div className="mb-1 text-slate-500 text-sm">
           Want to run a node for {otherNetwork.label} as well?
         </div>
