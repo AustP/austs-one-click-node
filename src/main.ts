@@ -160,7 +160,7 @@ const createWindow = (network: string) => {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          `connect-src 'self' data: http://localhost:* https://vp2apscqbf2e57yys6x4iczcyi0znuce.lambda-url.us-west-2.on.aws https://*.defly.app wss://*.walletconnect.org wss://*.defly.app; font-src 'self' https://fonts.gstatic.com; object-src 'none'; script-src 'self'; style-src 'unsafe-inline' https://fonts.googleapis.com`,
+          `connect-src 'self' data: http://localhost:* https://vp2apscqbf2e57yys6x4iczcyi0znuce.lambda-url.us-west-2.on.aws https://*.defly.app wss://*.walletconnect.org wss://*.defly.app wss://*.perawallet.app; font-src 'self' https://fonts.gstatic.com; object-src 'none'; script-src 'self'; style-src 'unsafe-inline' https://fonts.googleapis.com`,
         ],
       },
     });
