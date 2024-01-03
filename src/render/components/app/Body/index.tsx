@@ -9,9 +9,12 @@ import { useEffect, useState } from 'react';
 
 import Button from '@components/shared/Button';
 import GearIcon from '@components/icons/Gear';
+import Link from '@components/shared/Link';
 import UndoIcon from '@components/icons/Undo';
 import Spinner from '@components/shared/Spinner';
 import { Status, Step } from '@/render/flux/wizardStore';
+
+import { version } from '@/../../package.json';
 
 import Column from './Column';
 import Dashboard from './Dashboard';
@@ -27,6 +30,7 @@ export default function Body() {
   const stepStatus = flux.wizard.selectState('stepStatus');
 
   const [nodeStatus, setNodeStatus] = useState('starting');
+  const [latestVersion, setLatestVersion] = useState('');
   const checkNodeRunningStatus = stepStatus[Step.Check_Node_Running];
   const nodeSyncedStatus = stepStatus[Step.Node_Syncing];
   useEffect(() => {
@@ -47,6 +51,16 @@ export default function Body() {
   useEffect(() => {
     flux.dispatch('wizard/loadConfig');
     flux.dispatch('wizard/checkNodeRunning');
+
+    // fetch the latest version of the app
+    fetch(
+      'https://api.github.com/repos/AustP/austs-one-click-node/releases?per_page=1',
+    )
+      .then((response) => response.json())
+      .then((json) => {
+        const latestVersion = json[0].tag_name; // vx.y.z
+        setLatestVersion(latestVersion);
+      });
   }, []);
 
   const anyParticipating = flux.accounts.useState('anyParticipating');
@@ -99,6 +113,20 @@ export default function Body() {
             }
           />
           <div className="grow" />
+          <div className="text-xs text-slate-500">
+            A1CN v{version}{' '}
+            {latestVersion !== '' && `v${version}` !== latestVersion && (
+              <>
+                --{' '}
+                <Link
+                  className="cursor-pointer text-yellow-500"
+                  href="https://github.com/AustP/austs-one-click-node/releases"
+                >
+                  New Version Available
+                </Link>
+              </>
+            )}
+          </div>
           <div className="mb-2 text-sm text-slate-500">
             Connected to {networks.find((n) => n.value === network)!.label}
           </div>
