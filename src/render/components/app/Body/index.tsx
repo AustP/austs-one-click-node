@@ -52,15 +52,25 @@ export default function Body() {
     flux.dispatch('wizard/loadConfig');
     flux.dispatch('wizard/checkNodeRunning');
 
-    // fetch the latest version of the app
-    fetch(
-      'https://api.github.com/repos/AustP/austs-one-click-node/releases?per_page=1',
-    )
-      .then((response) => response.json())
-      .then((json) => {
-        const latestVersion = json[0].tag_name; // vx.y.z
-        setLatestVersion(latestVersion);
-      });
+    async function checkForUpdates() {
+      // fetch the latest version of the app
+      const response = await fetch(
+        'https://api.github.com/repos/AustP/austs-one-click-node/releases?per_page=1',
+      );
+
+      if (response.ok) {
+        const json = await response.json();
+        const latestVersion = json[0].tag_name.split('v')[1]; // x.y.z
+        if (latestVersion !== version) {
+          setLatestVersion(latestVersion);
+        }
+      }
+
+      // check for updates every hour
+      setTimeout(checkForUpdates, 1000 * 60 * 60);
+    }
+
+    checkForUpdates();
   }, []);
 
   const anyParticipating = flux.accounts.useState('anyParticipating');
@@ -115,7 +125,7 @@ export default function Body() {
           <div className="grow" />
           <div className="text-xs text-slate-500">
             A1CN v{version}{' '}
-            {latestVersion !== '' && `v${version}` !== latestVersion && (
+            {latestVersion !== '' && version !== latestVersion && (
               <>
                 --{' '}
                 <Link
