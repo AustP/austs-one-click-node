@@ -1,14 +1,16 @@
 import flux from '@aust/react-flux';
+import { useEffect } from 'react';
 
 import { Status, Step } from '@/render/flux/wizardStore';
 
 import Button from '@components/shared/Button';
 import Console from '@components/shared/Console';
 import Error from '@components/shared/Error';
-import Link from '@components/shared/Link';
 import Spinner from '@components/shared/Spinner';
 
 import Flush from './Flush';
+
+const RETRY_SYNC_INTERVAL = 60000; // wait this long to retry syncing after failure
 
 export default function StepViewer({
   buffers,
@@ -24,6 +26,17 @@ export default function StepViewer({
   status: Status;
   step: Step;
 }) {
+  const retrySync = step === Step.Node_Syncing && status === Status.Failure;
+  useEffect(() => {
+    if (retrySync) {
+      const timeout = setTimeout(
+        () => flux.dispatch('wizard/syncNode'),
+        RETRY_SYNC_INTERVAL,
+      );
+      return () => clearTimeout(timeout);
+    }
+  }, [retrySync]);
+
   switch (step) {
     case Step.Check_Node_Running:
       switch (status) {
