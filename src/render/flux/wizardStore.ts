@@ -2,8 +2,8 @@ import flux, { Store } from '@aust/react-flux';
 import { addNode, nodeRequest, removeNode } from 'algoseas-libs/build/algo';
 import { produce } from 'immer';
 
-const CATCHUP_FINISH_DELAY = 7000; // wait this long after catchup is complete to check if node is synced
 const CATCHUP_THRESHOLD = 720000; // catchup is triggered if node is this many blocks behind. ~100 blocks downloaded per sec. ~2 hrs to catchup
+const NODE_REQUEST_TIMEOUT = 3000; // how long to wait for a node request to complete
 const SYNC_WATCH_DELAY = 1000; // how long during syncing to wait between checks
 
 enum CatchUpStatus {
@@ -124,9 +124,6 @@ store.register('wizard/checkNodeRunning', () => {
 });
 
 store.register('wizard/checkNodeRunning/results', async () => {
-  // checking is so fast that we intentionally slow it down for UX
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
   const running = await window.goal.running();
   if (!running) {
     flux.dispatch('wizard/startNode');
@@ -140,19 +137,21 @@ store.register('wizard/startNode', () => {
   flux.dispatch('wizard/startNode/results');
 });
 
+let nodeAdded = false;
 store.register('wizard/startNode/results', async () => {
-  const hash = store.selectState('infraHash');
-
-  // starting is so fast that we intentionally slow it down for UX
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  // make sure that the user didn't change the network or port
-  if (hash !== store.selectState('infraHash')) {
-    return;
-  }
-
   try {
     await window.goal.start();
+    const token = await window.goal.token();
+    addNode(
+      `http://localhost:${store.selectState('port')}`,
+      token,
+      'X-Algo-API-Token',
+    );
+    nodeAdded = true;
+    flux.dispatch('node/ready');
+
+    await waitForNodeProgress();
+
     flux.dispatch('wizard/checkNodeSynced');
   } catch (err) {
     return (state) =>
@@ -163,37 +162,14 @@ store.register('wizard/startNode/results', async () => {
   }
 });
 
-let nodeAdded = false;
 store.register('wizard/checkNodeSynced', () => {
-  if (!nodeAdded) {
-    window.goal.token().then((token) => {
-      addNode(
-        `http://localhost:${store.selectState('port')}`,
-        token,
-        'X-Algo-API-Token',
-      );
-      nodeAdded = true;
-      flux.dispatch('node/ready');
-    });
-  }
-
   flux.dispatch('wizard/overview/goto', Step.Check_Node_Synced);
   flux.dispatch('wizard/checkNodeSynced/results');
 });
 
 store.register('wizard/checkNodeSynced/results', async () => {
-  const hash = store.selectState('infraHash');
-
-  // checking is so fast that we intentionally slow it down for UX
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  // make sure that the user didn't change the network or port
-  if (hash !== store.selectState('infraHash')) {
-    return;
-  }
-
   try {
-    await nodeRequest('/ready', { maxRetries: 0 });
+    await checkNodeReady();
     flux.dispatch('wizard/showDashboard');
   } catch (err) {
     flux.dispatch('wizard/syncNode');
@@ -214,16 +190,15 @@ store.register('wizard/syncNode/results', async () => {
   try {
     let catchUpStatus = store.selectState('catchUpStatus');
     if (catchUpStatus === CatchUpStatus.CatchingUp) {
-      let delay = SYNC_WATCH_DELAY;
       try {
         // after catching up, the node will report as ready
         // but the node still needs to download more blocks
         // so if the request is successful, we know that
         // we are back to syncing normally. so we wait a bit
         // and then check sync results again
-        await nodeRequest('/ready', { maxRetries: 0 });
+        await checkNodeReady();
+        await waitForNodeProgress();
         catchUpStatus = CatchUpStatus.Completed;
-        delay = CATCHUP_FINISH_DELAY;
       } catch (err) {
         // still catching up
       }
@@ -242,7 +217,7 @@ store.register('wizard/syncNode/results', async () => {
             }
 
             flux.dispatch('wizard/syncNode/results');
-          }, delay);
+          }, SYNC_WATCH_DELAY);
         });
     }
 
@@ -270,7 +245,7 @@ store.register('wizard/syncNode/results', async () => {
     }
 
     try {
-      await nodeRequest('/ready', { maxRetries: 0 });
+      await checkNodeReady();
       flux.dispatch('wizard/showDashboard');
     } catch (err) {
       // still not synced
@@ -421,3 +396,37 @@ store.addSelector(
   'running',
   (state) => state.stepStatus[Step.Dashboard] !== Status.Failure,
 );
+
+async function checkNodeReady() {
+  await nodeRequest('/ready', {
+    fetchTimeoutMs: NODE_REQUEST_TIMEOUT,
+    maxRetries: 0,
+  });
+}
+
+async function waitForNodeProgress() {
+  let startBlock: number | null = null;
+  while (true) {
+    try {
+      const status = await nodeRequest('/v2/status/', {
+        fetchTimeoutMs: NODE_REQUEST_TIMEOUT,
+        maxRetries: 0,
+      });
+
+      if (startBlock === null) {
+        startBlock = status['last-round'];
+        throw new Error('Node is not ready. Setting start block.');
+      }
+
+      if (status['last-round'] === startBlock && status['catchpoint'] === '') {
+        throw new Error(
+          'Node is not ready. Block round is the same and not catching up.',
+        );
+      }
+
+      break;
+    } catch (err) {
+      await new Promise((resolve) => setTimeout(resolve, SYNC_WATCH_DELAY));
+    }
+  }
+}
