@@ -4,7 +4,6 @@ import fs from 'fs';
 import path from 'path';
 
 import { ModifiedBrowserWindow } from '../main';
-import { productName } from '../../package.json';
 
 const CATCHPOINT_ENDPOINTS = {
   'algorand.mainnet':
