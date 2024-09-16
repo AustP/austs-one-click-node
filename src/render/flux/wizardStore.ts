@@ -2,7 +2,7 @@ import flux, { Store } from '@aust/react-flux';
 import { addNode, nodeRequest, removeNode } from 'algoseas-libs/build/algo';
 import { produce } from 'immer';
 
-const CATCHUP_THRESHOLD = 720000; // catchup is triggered if node is this many blocks behind. ~100 blocks downloaded per sec. ~2 hrs to catchup
+const CATCHUP_THRESHOLD = 20000; // catchup is triggered if node is this many blocks behind (2 catchup intervals gaurantees we can actually catch up)
 const NODE_REQUEST_TIMEOUT = 3000; // how long to wait for a node request to complete
 const SYNC_WATCH_DELAY = 1000; // how long during syncing to wait between checks
 
