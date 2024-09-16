@@ -52,7 +52,12 @@ export default function Body() {
     flux.dispatch('wizard/loadConfig');
     flux.dispatch('wizard/checkNodeRunning');
 
+    let destroyed = false;
     async function checkForUpdates() {
+      if (destroyed) {
+        return;
+      }
+
       // fetch the latest version of the app
       const response = await fetch(
         'https://api.github.com/repos/AustP/austs-one-click-node/releases?per_page=1',
@@ -69,6 +74,7 @@ export default function Body() {
     }
 
     checkForUpdates();
+    return () => void (destroyed = true);
   }, []);
 
   const anyParticipating = flux.accounts.useState('anyParticipating');
