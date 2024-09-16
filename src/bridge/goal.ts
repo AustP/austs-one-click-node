@@ -8,17 +8,17 @@ import { ModifiedBrowserWindow } from '../main';
 const CATCHPOINT_ENDPOINTS = {
   'algorand.mainnet':
     'https://algorand-catchpoints.s3.us-east-2.amazonaws.com/channel/mainnet/latest.catchpoint',
-  'voi.testnet': 'https://testnet-api.voi.nodly.io/v2/status',
+  'voi.mainnet': 'https://mainnet-api.voi.nodely.dev/v2/status',
 };
 
 const CONFIG_FILES = {
   'algorand.mainnet': 'algorand.mainnet.config.json',
-  'voi.testnet': 'voi.testnet.config.json',
+  'voi.mainnet': 'voi.mainnet.config.json',
 };
 
 const GENESIS_FILES = {
   'algorand.mainnet': 'algorand.mainnet.genesis.json',
-  'voi.testnet': 'voi.testnet.genesis.json',
+  'voi.mainnet': 'voi.mainnet.genesis.json',
 };
 
 const SUFFIX = process.platform === 'win32' ? '.exe' : '';
@@ -102,7 +102,7 @@ ipcMain.on('goal.catchpoint', async (event) => {
 
   const network = window.network;
   try {
-    if (network === 'voi.testnet') {
+    if (network === 'voi.mainnet') {
       const response = await fetch(
         CATCHPOINT_ENDPOINTS[network as keyof typeof CATCHPOINT_ENDPOINTS],
       );

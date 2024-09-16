@@ -1,0 +1,3 @@
+{
+  "DNSBootstrapID": "<network>.mainnet-voi.network?backup=<network>.mainnet-voi.net&dedup=<name>.mainnet-voi.(network|net)"
+}

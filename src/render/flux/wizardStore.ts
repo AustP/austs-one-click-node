@@ -36,7 +36,7 @@ type WizardStoreState = {
   catchUpStatus: CatchUpStatus;
   currentStep: Step;
   dataDir: '';
-  network: 'algorand.mainnet' | 'voi.testnet';
+  network: 'algorand.mainnet' | 'voi.mainnet';
   nodeName: '';
   port: number;
   stepStatus: Record<Step, Status>;
@@ -389,7 +389,7 @@ store.addSelector(
 
 store.addSelector('networks', () => [
   { label: 'Algorand MainNet', value: 'algorand.mainnet' },
-  { label: 'Voi TestNet', value: 'voi.testnet' },
+  { label: 'Voi MainNet', value: 'voi.mainnet' },
 ]);
 
 store.addSelector(

@@ -77,8 +77,8 @@ const config: ForgeConfig = {
       'src/bin/packaged/kmd',
       'src/config/algorand.mainnet.genesis.json',
       'src/config/algorand.mainnet.config.json',
-      'src/config/voi.testnet.genesis.json',
-      'src/config/voi.testnet.config.json',
+      'src/config/voi.mainnet.genesis.json',
+      'src/config/voi.mainnet.config.json',
     ],
     icon: path.join(ASSETS_DIR, 'icons', 'icon'),
     osxNotarize: {

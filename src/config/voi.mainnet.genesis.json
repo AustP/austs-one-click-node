@@ -1,0 +1,241 @@
+{
+  "alloc": [
+    {
+      "addr": "UVPIYH5R7F7ZOLRPE2SLGISO4C5Q72DWJGKARZOXF4HIL67IDCFLEWLMUA",
+      "comment": "RewardsPool",
+      "state": {
+        "algo": 10000000000,
+        "onl": 2
+      }
+    },
+    {
+      "addr": "TBEIGCNK4UCN3YDP2NODK3MJHTUZMYS3TABRM2MVSI2MPUR2V36E5JYHSY",
+      "comment": "FeeSink",
+      "state": {
+        "algo": 10000000000,
+        "onl": 2
+      }
+    },
+    {
+      "addr": "6YOWT3H6AAPFAW4PNZNRXCSLQKFGCYDDKTPU6KWTVICNN44QXPLQSRUHFY",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "7Uc3MbKBYZzXRYDFKU+z4sl0MdeR3E/3YbmzkjZ01oA=",
+        "stprf": "NIsERgq7CzWrcgMMznZ0up7mj7nHmiqtq0oUHoUzw3+ZL38/9Cu2mpDAiQsbRw0E/zZOh8pGE/OeT8Ii/4G4dQ==",
+        "vote": "0fF4jWPJjQXZPxo81S4NnJkKFNRciGTEdP86kd9toWQ=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "GFX47SJSYT72LMXPIHRWIWRVUAQNC3GBSLNKX445MIYVULCJDOYEJUMP24",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "orkoWa0lHNkrI5ID9+V8f5m2p/TogVyCHecFfLZprTo=",
+        "stprf": "2DPAqFo7i0t7WG2UnIQHx1joYuGmB2eFAWcWVDBMVEra96gEM8DY3jPunCvy1qQp+3YGqLb766rbFAh+Z15rqg==",
+        "vote": "lw6mmZi5k6V/IS9KMuFOEGiwp7EpH1kB9ypO5eF6clI=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "J5GTWOPA6DSS2RCHJG3TNE64JXVNOG2EG53636VRT7ZXFK2TDW4ZHMATWM",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "8F+p88Gk792ozYg9yT3/lEQuJBtQWQzhBY+tuPYTyU8=",
+        "stprf": "dQVx8lfq7PKGifd1xUbScQXDEdSA+tT7yoYeTjCacHz93PPwfxKm1IjBllH+K1qYsIf+j0tbiMubk1tTPPI3vA==",
+        "vote": "gPvaW7YT9wjX6x33JGlPtyh+mPFpwj7Q0WzRFOPzXhg=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "VCUJH5EQJQWMCXGOGYAZIHMJXTQXJRPVCVKQRPMM2SG3QWQ3QIOIGODH3M",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "q7s8K1UvMryHj8p1t6YEdFJe+a99QZfqm1P22xRmiNQ=",
+        "stprf": "ymTdy+CVutXHcMPNmJz2yZcR+1UkBpas5E/dbhJeb/rDXCIfqqdCxwYkcH+nBe+0Noa+piBeo5qVGX7GW6AflQ==",
+        "vote": "XqQ0Td4vpqXRMyU8O9xcwacR5dqn0lVll4c8cjVdx9M=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "4HCISKZ2QAVJHPRUGCF5FLCOCPFDKUHB7UVIFVWCUCL226BSJ3CGGQCJW4",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "zXnystGkbKTV2LDc+HEtSxMVWR4Mv+toK7o1DOk0lnU=",
+        "stprf": "IZozu6uKdR8lOkO37OlJ8nxQEakNqn/XG5uszgGWqzmNKCI+zt463otZnQcg/qpKMgW9KDCMi9FIQAuJ5A/DNg==",
+        "vote": "E+hwAnw1AH5VrrU46JbScqp+rzQD99CZmtESgfgtQ3o=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "5AEQM2JQ2IMVPRQ7DOWOIFU3WYHF6FJUQLH266YR3NHYFDWIOJH646MBQU",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "soeEeXCf0bXeyf1I3K9GEoJFqxuKsJNiVSFZCoOkZWA=",
+        "stprf": "2saACyEsq3MZ/wUVkpUR4DtuBrdnG3THaujvDfGDr7LAfVqhdsHCnZizv97UuF+p6FBzPNiK0okvIfHIKT1itw==",
+        "vote": "7FdDSxw2E9/EGvsuYVjXfnbSVbc0my79u3pei4TWk9o=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "OMJ34AIYPSC3YCTASOMS32Q5RR4NUZMK726MBE2QBNUVUCY3JO3YO7MGZE",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "FlU/Bynl6rKExKpivvoh7V022RJxBIx4PWlmGobRN2I=",
+        "stprf": "6Uyh+K2s1XnvVlH5QgQGXGtgeQjM6n9Kjd+s3QFLJvpYoxQOohrLnOiPOZnsg3HciSOYLH/ucE6Avthq85Bzsw==",
+        "vote": "GiCilt1LBKZZmDeG5fw1e74lbw6Cc+Kj2hKS2mB/ZrM=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "R3V36DX66X2QWZST3HN53G3WUJW67JNTHAHMAYDEQQ4PKVPCHHDYXJX3M4",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "Bzulp4vPU4qX2fsH1lI4nEKjWUnlb/L0KJ76X1XW8p8=",
+        "stprf": "1yIIsY/2JWPBamn9jskx5Bj9LP+g/9Zb8LO1rwbnaAjI7s8y5qQI6DvkX9NAWLvvwjUpKL+PwCDRLv+T5TLwcQ==",
+        "vote": "z6G4AFRqIqgqknSq7scVNx7gyS7UTPCMK/WlsTJsAMg=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "PTURD4BBWXB4ZDM624BG3YZHUOKCJIDKRKV7TQIVBUIZZUFBVJRW3ZDZ5Y",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "Gkljfe6CuaSiIkmsX1QXEzCViOk59ta0r8ukWKB4sbU=",
+        "stprf": "T7OHtO2/pE0RLzK9Yrent1viUq/lCojnQPV23TM0uC27Qj5lYHf9B3CCC+bpX/E8fGgihbAlntYST1xvGyov4g==",
+        "vote": "ppzIFpozaHU3mSaJdKj/BtIAVPh56+eXG5hIiIbYM+s=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "ULABSGYLHNHMST7PHDE3DZJSJKGPXGBTA7T3E5UW4MDHZOI7YS7LZU7BZI",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "AHsPMQDDTCV9tj5Sn/w+gX2PqB7XYA2dN1kkNHV8kBk=",
+        "stprf": "2B6SYIOGA4hQ418zR3Ak1ixiPbdTXPAO2lIxHGcNe3KVSya2L+PthxqkGRapRwg2imsMPUrKm5/WcKI2r7LzGg==",
+        "vote": "O0GUgZBuney5kqDnX/pNVTq6jgUGMtfdgM+9u2/ZgAM=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "NQYHZ2XQRCP5GICPEGOM62545HLPS34Y77DNC3UOA6JHYRXKY2X4NRLM5A",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "MS//jcPnT/g785vT7f1ovrZc45hfTxUpuFwQwWM5LnY=",
+        "stprf": "xb3TPh9H9L9b5OgKw9oOY3eCnfSv+lTpqKaJbydgP3TF9SM1WqSeMNeu3H5It5RcWaCBfSlNZc3trL2p1xcdwA==",
+        "vote": "E1TMzF/fy6WLceNCx/Dc+GQTMC6akdjMlNVenv9nsWQ=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "K627B2V4IL3Y7SCGDA3CJTE2LGSHB6V5CKSB3BI3WFR6BMCBFWSQN7BEWQ",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "Db97NdrnQEH8KYaQfxw2duJT9d55wCYMdSKvXXwkz1k=",
+        "stprf": "ja/XQZTWJwgOwm6lstoK7EKuPAdJsMznSULZSySoHn6mIfJ7108g9K2G1ekurRbRE3RIt1KBGwxWIC96BnXfpQ==",
+        "vote": "tUUL6SrY8YLN2kccBd6dWigfV9k3WOHIRdy/1iouyBs=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "LEZHUXCTPUCM3WZVQKDP5VZZBJWMRO5KFOJZ27XY7PBCRO4H4I2ICJBWRQ",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "dM6pgiwCY+TlU8hEFLLZK/DpmzQW6TcX8kKkr5pWuY8=",
+        "stprf": "PKEyAWepvucJrJ7tXI52sFTObOJy8GETyEC8rdUE2orxIemlYFrmbqFCJwqz2/j762ZYHUgG83Uj/Jai0DVulA==",
+        "vote": "/DqVtsEEVL8cIpKRUjXqfjb54xua5zbs4bHDReT+kfk=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "H5ZIJBAEGQ7MYBVCF4LWLNFUEYUQXZDXVLLVVUBBFHHALYPAZOVSBMEVT4",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "IZp4L/7OW3BlvwJSq7E2HTpv9ZAY23+B6Fg9puZtm0M=",
+        "stprf": "foGHFjxc88FeGs/FBtNvx2uqsxS5kUhMOwG7bj8RzxkamMc8w8G0zCvqbxfvD3/yC+uxYzdDlTusJwsn/pnNog==",
+        "vote": "wAl7g2ZUrX84y30/uN2oA0iE28uO++KwlHzfXxF1OA0=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "GKN3EHZTEYAYTN6OW4LQ7RWWLMPPGDGEHVAUWI6S5GDEGIJUMKNNVRS7H4",
+      "comment": "",
+      "state": {
+        "algo": 10000000000,
+        "onl": 1,
+        "sel": "On1EpPmVWqM9GyTw2YENwbxhAg2pVoDXggLGD11Kd7c=",
+        "stprf": "l/kDJSYwtjbt01zICXPPyHRNf8G5H7bSRIUlSTcibpkOMjOBpfzTi+B/OJxtXRaaaz8N6AjgE3QoLS1Ec+vdsA==",
+        "vote": "Rm8eNUUzbR/bSZHRZoEtB2FyVuqoJe2JIuvXCeTNrm8=",
+        "voteKD": 3163,
+        "voteLst": 10000000
+      }
+    },
+    {
+      "addr": "NVBQH722R6A7HUYIAQS2O6ZJB7UTOOFM6G4ILYIRPWE3OEOLHBOJR35DAY",
+      "comment": "",
+      "state": {
+        "algo": 2327200000000000
+      }
+    },
+    {
+      "addr": "IW5JBGLGVI2KV43ZYJROMYB2UL2MRHSOEN7H2EI4UK2SPA7XOL6KAMSEMU",
+      "comment": "",
+      "state": {
+        "algo": 2000000000000000
+      }
+    },
+    {
+      "addr": "WTAUFFJLWIOO2NFNV3ANFNCLX6CQEYRCOD6IEVYN5SJIFQHC76WOEPOR7U",
+      "comment": "Built by You. Run by You. Owned by You.",
+      "state": {
+        "algo": 5672630000000000
+      }
+    }
+  ],
+  "fees": "TBEIGCNK4UCN3YDP2NODK3MJHTUZMYS3TABRM2MVSI2MPUR2V36E5JYHSY",
+  "id": "v1.0",
+  "network": "voimain",
+  "proto": "https://github.com/algorandfoundation/specs/tree/925a46433742afb0b51bb939354bd907fa88bf95",
+  "rwd": "UVPIYH5R7F7ZOLRPE2SLGISO4C5Q72DWJGKARZOXF4HIL67IDCFLEWLMUA"
+}

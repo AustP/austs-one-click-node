@@ -1,5 +1,0 @@
-{
-  "DNSBootstrapID": "<network>.voi.network?backup=<network>.voinetwork.net&dedup=<name>.(voi.*?)\\.(network|net)",
-  "EnableCatchupFromArchiveServers": true,
-  "MaxCatchpointDownloadDuration": 43200000000000
-}
