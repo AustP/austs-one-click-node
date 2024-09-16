@@ -61,9 +61,7 @@ export default function Body() {
       if (response.ok) {
         const json = await response.json();
         const latestVersion = json[0].tag_name.split('v')[1]; // x.y.z
-        if (latestVersion !== version) {
-          setLatestVersion(latestVersion);
-        }
+        setLatestVersion(latestVersion);
       }
 
       // check for updates every hour
