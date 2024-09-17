@@ -123,6 +123,11 @@ const createWindow = (network: string) => {
     return;
   }
 
+  // make sure we only start windows for networks we support
+  if (!NETWORKS.includes(network)) {
+    return;
+  }
+
   const suffix =
     process.platform === 'darwin'
       ? 'icns'
@@ -227,6 +232,16 @@ const createWindow = (network: string) => {
 
   window.network = network;
   window.store = loadStore(network);
+
+  // if we are starting a second network,
+  // make sure the ports are different
+  if (runningNetworks.length > 0) {
+    const prevNetwork = runningNetworks[runningNetworks.length - 1];
+    const prevStore = loadStore(prevNetwork);
+    if (prevStore.get('port') === window.store.get('port')) {
+      window.store.set('port', (window.store.get('port') as number) + 1);
+    }
+  }
 
   runningNetworks.push(network);
   window.on('closed', () => {
