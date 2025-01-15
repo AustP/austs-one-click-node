@@ -1,5 +1,6 @@
 import flux from '@aust/react-flux';
 import { DeflyWalletConnect } from '@blockshake/defly-connect';
+import { PeraWalletConnect } from '@perawallet/connect';
 import {
   WalletProvider,
   useInitializeProviders,
@@ -80,7 +81,10 @@ export default function Body() {
   const anyParticipating = flux.accounts.useState('anyParticipating');
 
   const providers = useInitializeProviders({
-    providers: [{ id: PROVIDER_ID.DEFLY, clientStatic: DeflyWalletConnect }],
+    providers: [
+      { id: PROVIDER_ID.PERA, clientStatic: PeraWalletConnect },
+      { id: PROVIDER_ID.DEFLY, clientStatic: DeflyWalletConnect },
+    ],
   });
 
   return (
