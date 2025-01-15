@@ -25,6 +25,7 @@ import StepViewer from './StepViewer';
 
 export default function Body() {
   const buffers = flux.wizard.useState('buffers');
+  const guid = flux.wizard.selectState('guid');
   const network = flux.wizard.selectState('network');
   const networks = flux.wizard.selectState('networks');
   const step = flux.wizard.selectState('currentStep');
@@ -105,6 +106,21 @@ export default function Body() {
                 : stepStatus[Step.Node_Starting]
             }
           />
+          {guid !== '' && network === 'algorand.mainnet' ? (
+            <StatusIndicator
+              active={stepStatus[Step.Node_Starting] === Status.Success}
+              className="mt-2"
+              href={
+                guid ? `https://g.nodely.io/d/telemetry/?var-GUID=${guid}` : ''
+              }
+              label="Telemetry"
+              status={
+                stepStatus[Step.Node_Starting] === Status.Success
+                  ? Status.Success
+                  : Status.Failure
+              }
+            />
+          ) : null}
           <StatusIndicator
             active={
               stepStatus[Step.Check_Node_Synced] === Status.Pending ||

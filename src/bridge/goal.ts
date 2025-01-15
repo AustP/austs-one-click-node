@@ -225,7 +225,7 @@ ipcMain.on('goal.stop', (event) => {
   );
 });
 
-ipcMain.on('goal.telemetry', (event, { nodeName }) => {
+ipcMain.on('goal.telemetry', (event, { network, nodeName }) => {
   const window = BrowserWindow.fromWebContents(
     event.sender,
   )! as ModifiedBrowserWindow;
@@ -238,7 +238,13 @@ ipcMain.on('goal.telemetry', (event, { nodeName }) => {
   );
 
   config.Enable = nodeName !== '';
-  config.Name = nodeName === '' ? '' : `A1CN:${nodeName}`;
+
+  if (network === 'algorand.mainnet') {
+    config.URI = 'https://tel.4160.nodely.io';
+    config.Name = nodeName === '' ? '' : `@A1CN:${nodeName}`;
+  } else {
+    config.Name = nodeName === '' ? '' : `A1CN:${nodeName}`;
+  }
 
   fs.writeFileSync(
     path.join(dataDir, 'logging.config'),
@@ -248,7 +254,11 @@ ipcMain.on('goal.telemetry', (event, { nodeName }) => {
     },
   );
 
-  window.webContents.send('goal.telemetry');
+  window.webContents.send(
+    'goal.telemetry',
+    null,
+    config.Enable ? config.GUID : '',
+  );
 });
 
 ipcMain.on('goal.token', (event) => {

@@ -57,9 +57,10 @@ function sendIPC<T = any>(
 const electron = {
   isDev: () => sendIPC('isDev'),
   loadConfig: async () => {
-    const { dataDir, network, port } = await sendIPC('loadConfig');
+    const { dataDir, guid, network, port } = await sendIPC('loadConfig');
     return {
       dataDir,
+      guid,
       network,
       port,
       store: createStoreBindings(network),
@@ -97,7 +98,8 @@ const goal = {
   start: () => sendIPC('goal.start'),
   status: () => sendIPC('goal.status'),
   stop: () => sendIPC('goal.stop'),
-  telemetry: (nodeName: string) => sendIPC('goal.telemetry', { nodeName }),
+  telemetry: (nodeName: string, network: string) =>
+    sendIPC('goal.telemetry', { network, nodeName }),
   token: () => sendIPC('goal.token'),
 };
 

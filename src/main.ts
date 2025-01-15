@@ -61,6 +61,7 @@ const loadStore = (network: string) => {
     store.get('dataDir') ||
       path.join(app.getPath('appData'), productName, 'data', network),
   );
+  store.set('guid', store.get('guid', ''));
   store.set('nodeName', store.get('nodeName', ''));
   store.set('port', store.get('port', DEFAULT_PORT));
   store.set('startup', store.get('startup', false));
@@ -165,7 +166,7 @@ const createWindow = (network: string) => {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          `connect-src 'self' data: http://localhost:* https://vp2apscqbf2e57yys6x4iczcyi0znuce.lambda-url.us-west-2.on.aws https://api.github.com https://*.defly.app https://*.perawallet.app wss://*.walletconnect.org wss://*.defly.app wss://*.perawallet.app; font-src 'self' https://fonts.gstatic.com; object-src 'none'; script-src 'self'; style-src 'unsafe-inline' https://fonts.googleapis.com`,
+          `connect-src 'self' data: http://localhost:* https://vp2apscqbf2e57yys6x4iczcyi0znuce.lambda-url.us-west-2.on.aws https://api.github.com https://*.defly.app https://*.perawallet.app wss://*.walletconnect.org wss://*.defly.app wss://*.perawallet.app https://g.nodely.io; font-src 'self' https://fonts.gstatic.com; object-src 'none'; script-src 'self'; style-src 'unsafe-inline' https://fonts.googleapis.com`,
         ],
       },
     });
@@ -308,6 +309,7 @@ ipcMain.on('loadConfig', (event) => {
 
   event.sender.send('loadConfig', null, {
     dataDir: window.store.get('dataDir'),
+    guid: window.store.get('guid'),
     network: window.network,
     port: window.store.get('port'),
   });

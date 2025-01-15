@@ -36,6 +36,7 @@ type WizardStoreState = {
   catchUpStatus: CatchUpStatus;
   currentStep: Step;
   dataDir: '';
+  guid: '';
   network: 'algorand.mainnet' | 'voi.mainnet';
   nodeName: '';
   port: number;
@@ -80,12 +81,14 @@ const store = flux.addStore('wizard', {
 }) as any as Store<WizardStoreState>;
 
 store.register('wizard/loadConfig', async () => {
-  const { dataDir, network, port, store } = await window.electron.loadConfig();
+  const { dataDir, guid, network, port, store } =
+    await window.electron.loadConfig();
   window.store = store;
 
   return (state) =>
     produce(state, (draft) => {
       draft.dataDir = dataDir;
+      draft.guid = guid;
       draft.network = network as any;
       draft.port = port;
     });
@@ -354,12 +357,18 @@ store.register('wizard/setPort', async (_, port) => {
 });
 
 store.register('wizard/setTelemetry', async (_, nodeName) => {
+  const guid = await window.goal.telemetry(
+    nodeName,
+    store.selectState('network'),
+  );
+
+  await window.store.set('guid', guid);
   await window.store.set('nodeName', nodeName);
-  await window.goal.telemetry(nodeName);
 
   return (state) =>
     produce(state, (draft) => {
       draft.nodeName = nodeName;
+      draft.guid = guid;
     });
 });
 

@@ -1,21 +1,35 @@
 import { Status } from '@/render/flux/wizardStore';
 
+import OpenNewWindow from '@components/icons/OpenNewWindow';
+
 export default function StatusIndicator({
   active = false,
   children = null,
   className = '',
+  href = '',
   label,
   status,
 }: {
   active?: boolean;
   children?: React.ReactNode;
   className?: string;
+  href?: string;
   label: React.ReactNode;
   status: Status;
 }) {
+  const Tag = href ? 'a' : 'div';
+
   return (
     <div className={className}>
-      <div className="flex items-center rounded-full">
+      <Tag
+        className={`flex group items-center rounded-full ${
+          href
+            ? 'cursor-pointer -m-2 p-2 hover:text-slate-600 dark:hover:text-slate-400'
+            : ''
+        }`}
+        href={href}
+        target="_blank"
+      >
         <div className="relative">
           {active && (
             <div
@@ -45,11 +59,33 @@ export default function StatusIndicator({
               : !active
               ? 'text-slate-700 dark:text-slate-300'
               : ''
+          } ${
+            href
+              ? 'group-hover:text-slate-600 dark:group-hover:text-slate-400'
+              : ''
           }`}
         >
           {label}
         </div>
-      </div>
+        {href ? (
+          <>
+            <div className="grow" />
+            <OpenNewWindow
+              className={`h-4 ml-2 w-4 ${
+                status === Status.Success
+                  ? 'text-slate-500'
+                  : !active
+                  ? 'text-slate-700 dark:text-slate-300'
+                  : ''
+              } ${
+                href
+                  ? 'group-hover:text-slate-600 dark:group-hover:text-slate-400'
+                  : ''
+              }`}
+            />
+          </>
+        ) : null}
+      </Tag>
       {status !== Status.Success && children && (
         <div className="bg-slate-300 dark:bg-slate-700 mt-2 p-2 rounded-md text-xs">
           {children}
