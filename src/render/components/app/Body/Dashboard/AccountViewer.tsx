@@ -17,7 +17,9 @@ import AccountSelector from './AccountSelector';
 import StatNumber from './StatNumber';
 
 const EXPIRING_KEYS_THRESHOLD = 268800; // about two week's worth of blocks
+const MIN_ALGO_AMOUNT_FOR_REWARDS_IN_UA = 30_002_000_000; // 30k ALGO + 2 ALGO fee
 const PARTICIPATION_PERIOD = 3000000; // about 3 months worth of blocks
+const REWARDS_FEE_N = 2000; // 2 ALGO fee required when going online for rewards
 const SIGNING_TIMEOUT = 30000;
 const STATS_URL =
   'https://vp2apscqbf2e57yys6x4iczcyi0znuce.lambda-url.us-west-2.on.aws/';
@@ -62,6 +64,8 @@ export default function AccountViewer({
   const keysExpiringSoon =
     (account?.nodeParticipation.voteLast || 0) - lastBlock <
     EXPIRING_KEYS_THRESHOLD;
+  const eligibleForRewards =
+    account?.algoAmount > MIN_ALGO_AMOUNT_FOR_REWARDS_IN_UA;
 
   const generateKeys = useCallback(async () => {
     setGenerationError('');
@@ -365,6 +369,7 @@ export default function AccountViewer({
 
                   group.addOnlineKeyReg(
                     {
+                      feeN: eligibleForRewards ? REWARDS_FEE_N : 1,
                       from: selectedAccount,
                       note: PARTICIPATING_NOTE,
                       selectionKey: account.nodeParticipation.selectionKey!,
@@ -394,8 +399,12 @@ export default function AccountViewer({
                   : waitingFor === 'submission'
                   ? 'Submitting...'
                   : !participating
-                  ? 'Go Online'
-                  : 'Update Keys'}
+                  ? `Go Online ${
+                      eligibleForRewards ? '(w/ rewards)' : '(no rewards)'
+                    }`
+                  : `Update Keys ${
+                      eligibleForRewards ? '(w/ rewards)' : '(no rewards)'
+                    }`}
               </Button>
             ) : (
               participating && (
