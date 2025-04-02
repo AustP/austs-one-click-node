@@ -1,5 +1,19 @@
 # Aust's One-Click Node
 
+## Sunsetting
+
+> I built A1CN ~2 years ago for free and open-sourced it because there was a need in the community. Now that governance is over, and nodekit keeps improving, that need is no longer there.
+>
+> Therefore, I'm officially sunsetting A1CN.
+> 
+> For those currently using the app: you don't need to take immediate action. The app will continue to work for some time. However, when a new consensus upgrade comes out (i.e. p2p), then A1CN will no longer work. So whenever you have a spare weekend, you should migrate to nodekit.
+> 
+> Thanks for the memories.
+>
+> April 2nd, 2025
+
+https://x.com/austp17/status/1907481612885086553
+
 Aust's One-Click Node is an app for Mac, Windows, and Linux that makes it easy to spin up a node for Algorand or Voi and start participating in consensus.
 
 <img width="1023" alt="Screen Shot 2023-08-03 at 9 08 44 AM" src="https://github.com/AustP/austs-one-click-node/assets/2007045/2718a551-b4cb-4725-9f83-ccd03bbd8c98">
